@@ -1,20 +1,32 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import * as React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import { PaperProvider, MD3LightTheme as DefaultTheme } from 'react-native-paper';
+
+// Importa tus pantallas
+import HomeScreen from './screens/HomeScreen';
+import MaterialDesignScreen from './screens/MaterialDesignScreen';
+
+// Crea el Drawer
+const Drawer = createDrawerNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <PaperProvider>
+      <NavigationContainer>
+        <Drawer.Navigator initialRouteName="Home">
+          <Drawer.Screen
+            name="Home"
+            component={HomeScreen}
+            options={{ title: 'Inicio' }}
+          />
+          <Drawer.Screen
+            name="Material"
+            component={MaterialDesignScreen}
+            options={{ title: 'Componentes Material' }}
+          />
+        </Drawer.Navigator>
+      </NavigationContainer>
+    </PaperProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
