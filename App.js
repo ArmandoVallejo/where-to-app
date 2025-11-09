@@ -6,6 +6,7 @@ import { PaperProvider, MD3LightTheme as DefaultTheme } from 'react-native-paper
 // Importa tus pantallas
 import HomeScreen from './screens/HomeScreen';
 import MaterialDesignScreen from './screens/MaterialDesignScreen';
+import ProfileScreen from './screens/ProfileScreen';
 
 // Crea el Drawer
 const Drawer = createDrawerNavigator();
@@ -24,6 +25,11 @@ export default function App() {
             name="Material"
             component={MaterialDesignScreen}
             options={{ title: 'Componentes Material' }}
+          />
+          <Drawer.Screen
+            name="Perfil"
+            component={ProfileScreen}
+            options={{ title: 'Perfil' }}
           />
         </Drawer.Navigator>
       </NavigationContainer>
