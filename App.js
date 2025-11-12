@@ -1,41 +1,52 @@
-import * as React from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { PaperProvider, MD3LightTheme as DefaultTheme } from 'react-native-paper';
+import { PaperProvider } from 'react-native-paper';
 
-// Importa tus pantallas
+// 🔹 Gluestack UI
+import { GluestackUIProvider } from '@gluestack-ui/themed';
+import { config } from '@gluestack-ui/config';
+
+// 🔹 Pantallas
+import LoginScreen from './screens/LoginScreen';
+import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
 import MaterialDesignScreen from './screens/MaterialDesignScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import Admin from './screens/Admin';
 
-// Crea el Drawer
+// Navegadores
+const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
-export default function App() {
+// 🔹 Drawer principal después del login
+function DrawerNavigator() {
   return (
-    <PaperProvider>
-      <NavigationContainer>
-        <Drawer.Navigator initialRouteName="Home">
-          <Drawer.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{ title: 'Inicio' }}
-          />
-          <Drawer.Screen
-            name="Material"
-            component={MaterialDesignScreen}
-            options={{ title: 'Componentes Material' }}
-          />
-          <Drawer.Screen
-            name="Perfil"
-            component={ProfileScreen}
-            options={{ title: 'Perfil' }}
-          />
-          <Drawer.Screen
-            name="Admin"
-            component={Admin}
-            options={{ title: 'Administración' }}
+    <Drawer.Navigator initialRouteName="Home">
+      <Drawer.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ 
+          title: 'Inicio',
+          headerShown: false 
+        }}
+      />
+      <Drawer.Screen
+        name="Material"
+        component={MaterialDesignScreen}
+        options={{ title: 'Componentes Material' }}
+      />
+      <Drawer.Screen
+        name="Perfil"
+        component={ProfileScreen}
+        options={{ title: 'Perfil' }}
+      />
+      <Drawer.Screen
+        name="Lugares"
+        component={Lugares}
+        options={{ title: 'Lugares' }}
           />
         </Drawer.Navigator>
       </NavigationContainer>
