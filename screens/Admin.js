@@ -9,12 +9,15 @@ import {
   TextInput,
   Divider,
   List,
+  IconButton,
+  SegmentedButtons,
 } from 'react-native-paper';
 import { DatePickerInput, TimePickerModal } from 'react-native-paper-dates';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const Admin = () => {
   const [newEventModalVisible, setNewEventModalVisible] = useState(false);
+  const [optionsModalVisible, setOptionsModalVisible] = useState(false);
   const [eventName, setEventName] = useState('');
   const [category, setCategory] = useState('');
   const [expanded, setExpanded] = useState(false);
@@ -22,9 +25,11 @@ const Admin = () => {
   const [time, setTime] = useState({ hours: 12, minutes: 0 });
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [description, setDescription] = useState('');
+  const [selectedOption, setSelectedOption] = useState('');
 
   const onAddEventHandler = () => setNewEventModalVisible(true);
   const onDismissNewEventModal = () => setNewEventModalVisible(false);
+  const onDismissOptionsModal = () => setOptionsModalVisible(false);
 
   const onSaveEvent = () => {
     console.log({
@@ -45,6 +50,7 @@ const Admin = () => {
   return (
     <SafeAreaProvider>
       <View style={{ flex: 1 }}>
+        {/* Botón flotante */}
         <FAB
           style={styles.fab}
           icon="plus"
@@ -52,8 +58,16 @@ const Admin = () => {
           onPress={onAddEventHandler}
         />
 
+        {/* Botón de opciones */}
+        <IconButton
+          icon="dots-vertical"
+          size={30}
+          onPress={() => setOptionsModalVisible(true)}
+          style={{ position: 'absolute', right: 20, top: 40 }}
+        />
+
         <Portal>
-          {/* Modal principal */}
+          {/* Modal principal para crear evento */}
           <Modal
             visible={newEventModalVisible}
             onDismiss={onDismissNewEventModal}
@@ -63,7 +77,7 @@ const Admin = () => {
               <Text style={styles.title}>Nuevo evento</Text>
               <Divider style={styles.divider} />
 
-              {/* Nombre del evento */}
+              {/* Nombre */}
               <TextInput
                 label="Nombre del evento"
                 value={eventName}
@@ -77,7 +91,11 @@ const Admin = () => {
               <View style={styles.block}>
                 <List.Section>
                   <List.Accordion
-                    title={category ? `Categoría: ${category}` : 'Seleccionar categoría'}
+                    title={
+                      category
+                        ? `Categoría: ${category}`
+                        : 'Seleccionar categoría'
+                    }
                     expanded={expanded}
                     onPress={() => setExpanded(!expanded)}
                     left={(props) => <List.Icon {...props} icon="folder" />}
@@ -163,7 +181,7 @@ const Admin = () => {
             </ScrollView>
           </Modal>
 
-          {/* Modal de selección de hora */}
+          {/* Modal de hora */}
           <TimePickerModal
             visible={timePickerVisible}
             onDismiss={() => setTimePickerVisible(false)}
@@ -172,6 +190,59 @@ const Admin = () => {
             minutes={time.minutes}
             locale="es"
           />
+
+          {/* Modal de opciones (centrado) */}
+          <Modal
+  visible={optionsModalVisible}
+  onDismiss={onDismissOptionsModal}
+  contentContainerStyle={styles.optionsModalContainer}
+>
+  {/* Información del evento */}
+  <View style={styles.eventInfo}>
+    <Text style={styles.eventTitle}>Campeonato de Basketball</Text>
+
+    <View style={styles.eventDetailsRow}>
+      <View style={styles.eventDetail}>
+        <List.Icon icon="calendar" />
+        <Text>10/AGO/25</Text>
+      </View>
+
+      <View style={styles.eventDetail}>
+        <List.Icon icon="clock-outline" />
+        <Text>10:00 AM</Text>
+      </View>
+    </View>
+
+    <View style={styles.eventDetailsRow}>
+      <View style={styles.eventDetail}>
+        <List.Icon icon="account-group" />
+        <Text>50</Text>
+      </View>
+
+      <View style={styles.eventDetail}>
+        <List.Icon icon="map-marker" />
+        <Text>Auditorio</Text>
+      </View>
+    </View>
+
+    <Text style={styles.eventDescription}>
+      Ven a apoyar al talento del Instituto Tecnológico de Aguascalientes en la
+      3ª copa de basketball del estado.
+    </Text>
+  </View>
+
+  {/* Botones de opciones */}
+  <SegmentedButtons
+    value={selectedOption}
+    onValueChange={setSelectedOption}
+    buttons={[
+      { value: 'editar', label: 'Editar', icon: 'pencil' },
+      { value: 'eliminar', label: 'Eliminar', icon: 'delete' },
+      { value: 'participantes', label: 'Participantes', icon: 'account-group' },
+    ]}
+    style={styles.segmentedButtons}
+  />
+</Modal>
         </Portal>
       </View>
     </SafeAreaProvider>
@@ -192,6 +263,22 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     maxHeight: '85%',
   },
+  optionsModalContainer: {
+    backgroundColor: '#f6f2ff',
+    padding: 25,
+    marginHorizontal: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  optionsTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    marginBottom: 20,
+  },
+  segmentedButtons: {
+    width: '100%',
+    borderRadius: 20,
+  },
   title: {
     fontSize: 18,
     fontWeight: '600',
@@ -201,6 +288,34 @@ const styles = StyleSheet.create({
   divider: {
     marginBottom: 20,
   },
+  eventInfo: {
+  width: '100%',
+  backgroundColor: '#e8e0ff',
+  borderRadius: 16,
+  padding: 15,
+  marginBottom: 15,
+},
+eventTitle: {
+  fontSize: 18,
+  fontWeight: '700',
+  marginBottom: 8,
+  textAlign: 'center',
+},
+eventDetailsRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  marginBottom: 4,
+},
+eventDetail: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 4,
+},
+eventDescription: {
+  marginTop: 10,
+  textAlign: 'center',
+  fontSize: 14,
+},
   roundedInput: {
     marginBottom: 20,
     borderRadius: 20,
