@@ -31,7 +31,10 @@ function DrawerNavigator() {
       <Drawer.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: 'Inicio' }}
+        options={{ 
+          title: 'Inicio',
+          headerShown: false 
+        }}
       />
       <Drawer.Screen
         name="Material"
