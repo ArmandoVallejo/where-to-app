@@ -1,16 +1,26 @@
+// App.js
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createDrawerNavigator } from '@react-navigation/drawer';
-import { PaperProvider } from 'react-native-paper';
-
-// 🔹 Gluestack UI
+import {
+  createNativeStackNavigator
+} from '@react-navigation/native-stack';
+import {
+  createDrawerNavigator,
+  DrawerContentScrollView,
+  DrawerItem
+} from '@react-navigation/drawer';
+import {
+  PaperProvider,
+  Drawer as PaperDrawer,
+  useTheme
+} from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 import { GluestackUIProvider } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
 
-// 🔹 Pantallas
+// Pantallas
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -18,53 +28,122 @@ import MaterialDesignScreen from './screens/MaterialDesignScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import Lugares from './screens/Lugares';
 
-
-// Evita que el splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
 
-// Navegadores
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
-// 🔹 Drawer principal después del login
+
+// 🔹 Drawer personalizado con Logout
+function CustomDrawerContent(props) {
+  const theme = useTheme();
+  const { navigation } = props;
+  const [active, setActive] = useState('Home');
+
+  const menuItems = [
+    { label: 'Inicio', icon: 'home-outline', route: 'Home' },
+    { label: 'Perfil', icon: 'person-outline', route: 'Perfil' },
+    { label: 'Eventos', icon: 'calendar-outline', route: 'Eventos' },
+    { label: 'Lugares', icon: 'location-outline', route: 'Lugares' },
+  ];
+
+  const handleLogout = () => {
+    // 👉 Aquí podrías limpiar el estado o token del usuario
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Login' }],
+    });
+  };
+
+  return (
+    <DrawerContentScrollView
+      {...props}
+      contentContainerStyle={{ flex: 1, justifyContent: 'space-between' }}
+    >
+      {/* 🔹 Sección principal */}
+      <View>
+        <PaperDrawer.Section title="Menú principal">
+          {menuItems.map((item) => (
+            <DrawerItem
+              key={item.route}
+              label={item.label}
+              icon={({ color, size }) => (
+                <Ionicons name={item.icon} size={size} color={color} />
+              )}
+              focused={active === item.route}
+              onPress={() => {
+                setActive(item.route);
+                navigation.navigate(item.route);
+              }}
+              style={{
+                borderRadius: 12,
+                marginHorizontal: 8,
+              }}
+              labelStyle={{
+                fontSize: 16,
+              }}
+            />
+          ))}
+        </PaperDrawer.Section>
+      </View>
+
+      {/* 🔹 Sección inferior: Logout */}
+      <PaperDrawer.Section
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.surfaceVariant,
+          paddingTop: 8,
+        }}
+      >
+        <DrawerItem
+          label="Cerrar sesión"
+          icon={({ size }) => (
+            <Ionicons name="log-out-outline" size={size} color="#DC2626" />
+          )}
+          onPress={handleLogout}
+          labelStyle={{
+            color: '#DC2626',
+            fontWeight: 'bold',
+          }}
+        />
+      </PaperDrawer.Section>
+    </DrawerContentScrollView>
+  );
+}
+
+
+// 🔹 Drawer principal
 function DrawerNavigator() {
   return (
-    <Drawer.Navigator initialRouteName="Home">
-      <Drawer.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{ 
-          title: 'Inicio',
-          headerShown: false 
-        }}
-      />
-      <Drawer.Screen
-        name="Material"
-        component={MaterialDesignScreen}
-        options={{ title: 'Componentes Material' }}
-      />
-      <Drawer.Screen
-        name="Perfil"
-        component={ProfileScreen}
-        options={{ title: 'Perfil' }}
-      />
-        <Drawer.Screen
-            name="Lugares"
-            component={Lugares}
-            options={{ title: 'Lugares' }}
-          />
+    <Drawer.Navigator
+      initialRouteName="Home"
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      screenOptions={{
+        headerShown: true,
+        headerStyle: { backgroundColor: '#A855F7' },
+        headerTintColor: '#fff',
+        drawerActiveBackgroundColor: '#EDE9FE',
+        drawerActiveTintColor: '#6D28D9',
+        drawerLabelStyle: { fontSize: 15, marginLeft: -10 },
+      }}
+    >
+      <Drawer.Screen name="Home" component={HomeScreen} options={{ title: 'Inicio' }} />
+      <Drawer.Screen name="Perfil" component={ProfileScreen} />
+      <Drawer.Screen name="Eventos" component={MaterialDesignScreen} />
+      <Drawer.Screen name="Lugares" component={Lugares} />
     </Drawer.Navigator>
   );
 }
 
+
+// 🔹 App principal
 export default function App() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const prepare = async () => {
       try {
-        // Espera 3 segundos antes de ocultar el splash
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
       } catch (e) {
         console.warn(e);
       } finally {
@@ -75,7 +154,6 @@ export default function App() {
     prepare();
   }, []);
 
-  // 🔹 Muestra un loader mientras espera los 3 segundos del splash
   if (!isReady) {
     return (
       <View
@@ -91,10 +169,8 @@ export default function App() {
     );
   }
 
-  // 🔹 App principal con Gluestack UI + Paper + navegación
   return (
     <PaperProvider>
-
       <GluestackUIProvider config={config}>
         <NavigationContainer>
           <Stack.Navigator
@@ -107,7 +183,6 @@ export default function App() {
           </Stack.Navigator>
         </NavigationContainer>
       </GluestackUIProvider>
-
     </PaperProvider>
   );
 }

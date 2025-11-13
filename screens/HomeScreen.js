@@ -232,6 +232,7 @@ export default function HomeScreen({ navigation }) {
   const handleLocationPress = () => {
     // Navigate to location/map screen
     console.log("Navigate to location screen");
+    navigation.navigate('Lugares');
   };
 
   return (
@@ -241,9 +242,6 @@ export default function HomeScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={24} color="#000" />
-          </TouchableOpacity>
           <View style={styles.headerTitle}>
             <Text style={styles.headerMainText}>Eventos /</Text>
             <Text style={styles.headerSubText}>Salones</Text>
