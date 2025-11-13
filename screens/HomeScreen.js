@@ -425,7 +425,10 @@ export default function HomeScreen({ navigation }) {
           <Text style={[styles.navText, styles.navTextActive]}>Inicio</Text>
           <View style={styles.activeIndicator} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('History')}
+        >
           <Ionicons name="calendar-outline" size={24} color="#666" />
           <Text style={styles.navText}>Eventos</Text>
         </TouchableOpacity>
