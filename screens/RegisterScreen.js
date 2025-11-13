@@ -14,6 +14,7 @@ import {
   Pressable,
 } from '@gluestack-ui/themed';
 import { useNavigation } from '@react-navigation/native';
+import { ArrowLeft } from 'lucide-react-native';
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
@@ -43,7 +44,7 @@ export default function RegisterScreen() {
       {/* Botón de regresar */}
       <Box position="absolute" top="$10" left="$5">
         <Pressable onPress={() => navigation.goBack()}>
-          <Text fontSize="$xl" color="$black">←</Text>
+          <ArrowLeft size={40} color="#000" />
         </Pressable>
       </Box>
 
