@@ -356,8 +356,7 @@ export default function HomeScreen({ navigation }) {
                 <Button 
                   mode="contained"
                   onPress={() => {
-                    console.log("Open QR scanner for attendance");
-                    openEventModal(event);
+                    navigation.navigate('QRScanner', { eventTitle: event.title });
                   }}
                   style={styles.scanButton}
                   icon="qrcode"
@@ -467,8 +466,8 @@ export default function HomeScreen({ navigation }) {
                         iconColor="#fff"
                         containerColor="#6B46C1"
                         onPress={() => {
-                          console.log("Scan QR code");
                           closeModal();
+                          navigation.navigate('QRScanner', { eventTitle: selectedEvent.title });
                         }}
                       />
                     )}
@@ -537,8 +536,8 @@ export default function HomeScreen({ navigation }) {
                       <Button 
                         mode="contained"
                         onPress={() => {
-                          console.log("Scanning QR for attendance");
                           closeModal();
+                          navigation.navigate('QRScanner', { eventTitle: selectedEvent.title });
                         }}
                         style={styles.modalActionButton}
                         buttonColor="#6B46C1"

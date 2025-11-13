@@ -17,6 +17,7 @@ import HomeScreen from './screens/HomeScreen';
 import MaterialDesignScreen from './screens/MaterialDesignScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import HistoryScreen from './screens/HistoryScreen';
+import QRScannerScreen from './screens/QRScannerScreen';
 
 // Evita que el splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -52,6 +53,14 @@ function DrawerNavigator() {
         component={HistoryScreen}
         options={{ 
           title: 'Historial de eventos',
+          headerShown: false 
+        }}
+      />
+      <Drawer.Screen
+        name="QRScanner"
+        component={QRScannerScreen}
+        options={{ 
+          title: 'Escanear QR',
           headerShown: false 
         }}
       />
