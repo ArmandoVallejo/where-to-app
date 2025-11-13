@@ -22,7 +22,7 @@ export default function LoginScreen() {
 
   // Simulación de usuario válido
   const validUser = {
-    control: '19151677',
+    control: '11111111',
     password: 'Hola1234#',
   };
 

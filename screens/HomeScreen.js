@@ -22,8 +22,11 @@ import {
   Dialog,
   Surface,
   Divider,
-  FAB
+  FAB,
+  TextInput,
+  List
 } from "react-native-paper";
+import { DatePickerInput, TimePickerModal } from 'react-native-paper-dates';
 
 // Mock data for events with registration states
 const MOCK_EVENTS = [
@@ -183,6 +186,40 @@ export default function HomeScreen({ navigation }) {
     MOCK_EVENTS.filter(e => e.isRegistered).map(e => e.id)
   );
 
+  // New event modal states
+  const [newEventModalVisible, setNewEventModalVisible] = useState(false);
+  const [eventName, setEventName] = useState('');
+  const [category, setCategory] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const [date, setDate] = useState(undefined);
+  const [time, setTime] = useState({ hours: 12, minutes: 0 });
+  const [timePickerVisible, setTimePickerVisible] = useState(false);
+  const [description, setDescription] = useState('');
+
+  const onAddEventHandler = () => {
+    setNewEventModalVisible(true);
+  };
+
+  const onDismissNewEventModal = () => {
+    setNewEventModalVisible(false);
+  };
+
+  const onSaveEvent = () => {
+    console.log({
+      eventName,
+      category,
+      date,
+      time: `${time.hours}:${String(time.minutes).padStart(2, '0')}`,
+      description,
+    });
+    setNewEventModalVisible(false);
+  };
+
+  const onConfirmTime = ({ hours, minutes }) => {
+    setTime({ hours, minutes });
+    setTimePickerVisible(false);
+  };
+
   // Filter and sort events
   const getFilteredAndSortedEvents = () => {
     let events = MOCK_EVENTS;
@@ -219,6 +256,8 @@ export default function HomeScreen({ navigation }) {
     return registeredEvents.includes(eventId);
   };
 
+  const [admin, setAdmin] = useState(false);
+
   const openEventModal = (event) => {
     setSelectedEvent(event);
     setModalVisible(true);
@@ -232,6 +271,7 @@ export default function HomeScreen({ navigation }) {
   const handleLocationPress = () => {
     // Navigate to location/map screen
     console.log("Navigate to location screen");
+    navigation.navigate('Lugares');
   };
 
   return (
@@ -241,18 +281,21 @@ export default function HomeScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={24} color="#000" />
-          </TouchableOpacity>
           <View style={styles.headerTitle}>
             <Text style={styles.headerMainText}>Eventos /</Text>
             <Text style={styles.headerSubText}>Salones</Text>
           </View>
         </View>
+        <TouchableOpacity onPress={() => setAdmin(!admin)} style={{
+          marginLeft: 15
+        }}>
+          <Text style={styles.adminButtonText}>{admin ? "Salir Admin" : "Entrar Admin"}</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={handleLocationPress} style={styles.locationButton}>
           <Text style={styles.locationText}>Auditorio</Text>
           <Ionicons name="location-sharp" size={20} color="#000" />
         </TouchableOpacity>
+        
       </View>
 
       {/* Category Chips */}
@@ -281,6 +324,13 @@ export default function HomeScreen({ navigation }) {
           </Chip>
         ))}
       </ScrollView>
+
+      <FAB
+        style={styles.fab}
+        icon="plus"
+        size="medium"
+        onPress={onAddEventHandler}
+      />
 
       {/* Events List */}
       <ScrollView
@@ -410,6 +460,15 @@ export default function HomeScreen({ navigation }) {
         ))}
       </ScrollView>
 
+      {/* FAB */}
+      <FAB
+        icon="plus"
+        style={styles.fab}
+        size="medium"
+        visible={admin}
+        onPress={onAddEventHandler}
+      />
+
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity 
@@ -522,6 +581,51 @@ export default function HomeScreen({ navigation }) {
 
                   <Divider />
 
+                  {/* Admin controls - visible only if admin is true */}
+                  {admin && (
+                    <>
+                      <View style={styles.adminButtonsContainer}>
+                        <Button
+                          mode="contained"
+                          icon="pencil"
+                          onPress={() => {
+                            console.log("Edit event", selectedEvent.id);
+                            closeModal();
+                          }}
+                          style={styles.adminButton}
+                          buttonColor="#6B46C1"
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          mode="contained"
+                          icon="delete"
+                          onPress={() => {
+                            console.log("Delete event", selectedEvent.id);
+                            closeModal();
+                          }}
+                          style={styles.adminButton}
+                          buttonColor="#EF4444"
+                        >
+                          Eliminar
+                        </Button>
+                        <Button
+                          mode="contained"
+                          icon="account-group"
+                          onPress={() => {
+                            console.log("View participants", selectedEvent.id);
+                            closeModal();
+                          }}
+                          style={styles.adminButton}
+                          buttonColor="#10B981"
+                        >
+                          Participantes
+                        </Button>
+                      </View>
+                      <Divider />
+                    </>
+                  )}
+
                   <View style={styles.modalFooter}>
                     <Button
                       mode="outlined"
@@ -532,7 +636,7 @@ export default function HomeScreen({ navigation }) {
                     </Button>
                     
                     {/* Show different actions based on event type and registration */}
-                    {!selectedEvent.isAssignature && selectedEvent.isToday && !isEventRegistered(selectedEvent.id) && (
+                    {!admin && !selectedEvent.isAssignature && selectedEvent.isToday && !isEventRegistered(selectedEvent.id) && (
                       <Button 
                         mode="contained"
                         onPress={() => {
@@ -546,7 +650,7 @@ export default function HomeScreen({ navigation }) {
                       </Button>
                     )}
                     
-                    {!selectedEvent.isAssignature && !selectedEvent.isToday && !isEventRegistered(selectedEvent.id) && (
+                    {!admin && !selectedEvent.isAssignature && !selectedEvent.isToday && !isEventRegistered(selectedEvent.id) && (
                       <Button 
                         mode="contained"
                         onPress={() => {
@@ -560,7 +664,7 @@ export default function HomeScreen({ navigation }) {
                       </Button>
                     )}
                     
-                    {!selectedEvent.isAssignature && !selectedEvent.isToday && isEventRegistered(selectedEvent.id) && (
+                    {!admin && !selectedEvent.isAssignature && !selectedEvent.isToday && isEventRegistered(selectedEvent.id) && (
                       <Button 
                         mode="contained"
                         onPress={() => {
@@ -580,6 +684,130 @@ export default function HomeScreen({ navigation }) {
             </Pressable>
           </Pressable>
         </Modal>
+
+        {/* Modal principal para crear evento */}
+        <Modal
+          visible={newEventModalVisible}
+          onDismiss={onDismissNewEventModal}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.title}>Nuevo evento</Text>
+            <Divider style={styles.divider} />
+
+            {/* Nombre */}
+            <TextInput
+              label="Nombre del evento"
+              value={eventName}
+              onChangeText={setEventName}
+              mode="outlined"
+              style={styles.roundedInput}
+              theme={{ roundness: 20 }}
+            />
+
+            {/* Categoría */}
+            <View style={styles.block}>
+              <List.Section>
+                <List.Accordion
+                  title={
+                    category
+                      ? `Categoría: ${category}`
+                      : 'Seleccionar categoría'
+                  }
+                  expanded={expanded}
+                  onPress={() => setExpanded(!expanded)}
+                  left={(props) => <List.Icon {...props} icon="folder" />}
+                  style={styles.accordion}
+                >
+                  {['Académico', 'Deportivo', 'Servicio social', 'Otro'].map(
+                    (item) => (
+                      <List.Item
+                        key={item}
+                        title={item}
+                        onPress={() => {
+                          setCategory(item);
+                          setExpanded(false);
+                        }}
+                      />
+                    )
+                  )}
+                </List.Accordion>
+              </List.Section>
+            </View>
+
+            {/* Fecha */}
+            <View style={styles.block}>
+              <DatePickerInput
+                locale="es"
+                label="Fecha del evento"
+                value={date}
+                onChange={(d) => setDate(d)}
+                inputMode="start"
+                mode="outlined"
+                style={styles.roundedInput}
+                theme={{ roundness: 20 }}
+              />
+            </View>
+
+            {/* Hora */}
+            <View style={styles.block}>
+              <Button
+                mode="outlined"
+                icon="clock"
+                onPress={() => setTimePickerVisible(true)}
+                style={styles.roundedButton}
+                labelStyle={{ textTransform: 'none' }}
+              >
+                {time
+                  ? `Hora seleccionada: ${String(time.hours).padStart(
+                      2,
+                      '0'
+                    )}:${String(time.minutes).padStart(2, '0')}`
+                  : 'Seleccionar hora'}
+              </Button>
+            </View>
+
+            {/* Descripción */}
+            <TextInput
+              label="Descripción"
+              value={description}
+              onChangeText={setDescription}
+              mode="outlined"
+              multiline
+              numberOfLines={8}
+              style={[styles.roundedInput, styles.textArea]}
+              theme={{ roundness: 20 }}
+            />
+
+            {/* Botones */}
+            <View style={styles.buttonRow}>
+              <Button
+                mode="outlined"
+                onPress={onDismissNewEventModal}
+                style={styles.roundedButton}
+              >
+                Cancelar
+              </Button>
+              <Button
+                mode="contained"
+                onPress={onSaveEvent}
+                style={[styles.roundedButton, { backgroundColor: '#6200ee' }]}
+              >
+                Guardar
+              </Button>
+            </View>
+          </ScrollView>
+        </Modal>
+
+        {/* Modal de hora */}
+        <TimePickerModal
+          visible={timePickerVisible}
+          onDismiss={() => setTimePickerVisible(false)}
+          onConfirm={onConfirmTime}
+          hours={time.hours}
+          minutes={time.minutes}
+          locale="es"
+        />
       </Portal>
     </SafeAreaView>
   );
@@ -589,6 +817,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+  },
+  fab:{
+    position: 'absolute',
+    margin: 40,
+    right: 0,
+    bottom: 100,
   },
   header: {
     flexDirection: "row",
@@ -901,5 +1135,57 @@ const styles = StyleSheet.create({
   modalUnregisterButton: {
     flex: 1,
     borderRadius: 8,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    padding: 20,
+    margin: 20,
+    borderRadius: 12,
+    maxHeight: '85%',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  divider: {
+    marginBottom: 20,
+  },
+  roundedInput: {
+    marginBottom: 15,
+  },
+  block: {
+    marginBottom: 15,
+  },
+  accordion: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  textArea: {
+    minHeight: 120,
+  },
+  roundedButton: {
+    borderRadius: 20,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginTop: 20,
+  },
+  adminButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    gap: 8,
+  },
+  adminButton: {
+    flex: 1,
+    borderRadius: 8,
+  },
+  adminButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
 });
