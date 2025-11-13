@@ -164,13 +164,37 @@ export default function App() {
   useEffect(() => {
     const prepare = async () => {
       try {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (e) {
         console.warn(e);
       } finally {
         await SplashScreen.hideAsync();
         setIsReady(true);
       }
-    }
+    };
+
+    prepare();
+  }, []);
+
+  if (!isReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#A855F7" />
+      </View>
+    );
   }
-)};
+
+  return (
+    <GluestackUIProvider config={config}>
+      <PaperProvider>
+        <NavigationContainer>
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="Main" component={DrawerNavigator} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </PaperProvider>
+    </GluestackUIProvider>
+  );
+}
