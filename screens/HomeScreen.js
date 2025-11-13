@@ -275,7 +275,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -810,7 +810,7 @@ export default function HomeScreen({ navigation }) {
           locale="es"
         />
       </Portal>
-    </View>
+    </SafeAreaView>
   );
 }
 

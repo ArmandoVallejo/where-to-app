@@ -117,11 +117,11 @@ export default function HistoryScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <SafeAreaView style={styles.container} >
+      <StatusBar barStyle="dark-content" backgroundColor= "#fff" />
 
       {/* Header */}
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.openDrawer()}>
             <Ionicons name="menu" size={24} color="#000" />
@@ -131,7 +131,7 @@ export default function HistoryScreen({ navigation }) {
           </View>
         </View>
         <View style={styles.headerPlaceholder} />
-      </View>
+      </View> */}
 
       {/* Events List Grouped by Location */}
       <ScrollView

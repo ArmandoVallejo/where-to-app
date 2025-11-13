@@ -47,10 +47,10 @@ function CustomDrawerContent(props) {
   const menuItems = [
     { label: 'Inicio', icon: 'home-outline', route: 'Home' },
     { label: 'Perfil', icon: 'person-outline', route: 'Perfil' },
-    { label: 'Eventos', icon: 'calendar-outline', route: 'Eventos' },
+    // { label: 'Eventos', icon: 'calendar-outline', route: 'Eventos' },
     { label: 'Lugares', icon: 'location-outline', route: 'Lugares' },
     { label: 'Historial', icon: 'time-outline', route: 'History' },
-    { label: 'Escanear QR', icon: 'qr-code-outline', route: 'QRScanner' },
+    // { label: 'Escanear QR', icon: 'qr-code-outline', route: 'QRScanner' },
   ];
 
   const handleLogout = () => {
@@ -135,24 +135,24 @@ function DrawerNavigator() {
     >
       <Drawer.Screen name="Home" component={HomeScreen} options={{ title: 'Inicio' }} />
       <Drawer.Screen name="Perfil" component={ProfileScreen} />
-      <Drawer.Screen name="Eventos" component={MaterialDesignScreen} />
+      {/* <Drawer.Screen name="Eventos" component={MaterialDesignScreen} /> */}
       <Drawer.Screen name="Lugares" component={Lugares} />
       <Drawer.Screen
         name="History"
         component={HistoryScreen}
         options={{
           title: 'Historial de eventos',
-          headerShown: false,
+
         }}
       />
-      <Drawer.Screen
+      {/* <Drawer.Screen
         name="QRScanner"
         component={QRScannerScreen}
         options={{
           title: 'Escanear QR',
           headerShown: false,
         }}
-      />
+      /> */}
       <Drawer.Screen
         name="Participants"
         component={ParticipantsScreen}
@@ -198,6 +198,8 @@ export default function App() {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="Main" component={DrawerNavigator} />
+            {/* <Stack.Screen name="Participants" component={ParticipantsScreen} /> */}
+            <Stack.Screen name="QRScanner" component={QRScannerScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </PaperProvider>
