@@ -275,9 +275,7 @@ export default function HomeScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -613,8 +611,11 @@ export default function HomeScreen({ navigation }) {
                           mode="contained"
                           icon="account-group"
                           onPress={() => {
-                            console.log("View participants", selectedEvent.id);
                             closeModal();
+                            navigation.navigate("Participants", { 
+                              eventId: selectedEvent.id,
+                              eventName: selectedEvent.title 
+                            });
                           }}
                           style={styles.adminButton}
                           buttonColor="#10B981"
@@ -809,7 +810,7 @@ export default function HomeScreen({ navigation }) {
           locale="es"
         />
       </Portal>
-    </SafeAreaView>
+    </View>
   );
 }
 

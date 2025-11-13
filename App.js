@@ -29,6 +29,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import Lugares from './screens/Lugares';
 import HistoryScreen from './screens/HistoryScreen';
 import QRScannerScreen from './screens/QRScannerScreen';
+import ParticipantsScreen from './screens/ParticipantsScreen';
 
 // Evita que el splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -151,6 +152,11 @@ function DrawerNavigator() {
           title: 'Escanear QR',
           headerShown: false,
         }}
+      />
+      <Drawer.Screen
+        name="Participants"
+        component={ParticipantsScreen}
+        options={{ title: 'Participantes' }}
       />
     </Drawer.Navigator>
   );
