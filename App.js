@@ -16,8 +16,7 @@ import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
 import MaterialDesignScreen from './screens/MaterialDesignScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import Lugares from './screens/Lugares';
-
+import HistoryScreen from './screens/HistoryScreen';
 
 // Evita que el splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -48,11 +47,14 @@ function DrawerNavigator() {
         component={ProfileScreen}
         options={{ title: 'Perfil' }}
       />
-        <Drawer.Screen
-            name="Lugares"
-            component={Lugares}
-            options={{ title: 'Lugares' }}
-          />
+      <Drawer.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{ 
+          title: 'Historial de eventos',
+          headerShown: false 
+        }}
+      />
     </Drawer.Navigator>
   );
 }
@@ -94,7 +96,6 @@ export default function App() {
   // 🔹 App principal con Gluestack UI + Paper + navegación
   return (
     <PaperProvider>
-
       <GluestackUIProvider config={config}>
         <NavigationContainer>
           <Stack.Navigator
@@ -107,7 +108,6 @@ export default function App() {
           </Stack.Navigator>
         </NavigationContainer>
       </GluestackUIProvider>
-
     </PaperProvider>
   );
 }
