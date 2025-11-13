@@ -171,4 +171,6 @@ export default function App() {
         await SplashScreen.hideAsync();
         setIsReady(true);
       }
-    };
+    }
+  }
+)};
