@@ -406,8 +406,7 @@ export default function HomeScreen({ navigation }) {
                 <Button 
                   mode="contained"
                   onPress={() => {
-                    console.log("Open QR scanner for attendance");
-                    openEventModal(event);
+                    navigation.navigate('QRScanner', { eventTitle: event.title });
                   }}
                   style={styles.scanButton}
                   icon="qrcode"
@@ -484,7 +483,10 @@ export default function HomeScreen({ navigation }) {
           <Text style={[styles.navText, styles.navTextActive]}>Inicio</Text>
           <View style={styles.activeIndicator} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('History')}
+        >
           <Ionicons name="calendar-outline" size={24} color="#666" />
           <Text style={styles.navText}>Eventos</Text>
         </TouchableOpacity>
@@ -523,8 +525,8 @@ export default function HomeScreen({ navigation }) {
                         iconColor="#fff"
                         containerColor="#6B46C1"
                         onPress={() => {
-                          console.log("Scan QR code");
                           closeModal();
+                          navigation.navigate('QRScanner', { eventTitle: selectedEvent.title });
                         }}
                       />
                     )}
@@ -638,8 +640,8 @@ export default function HomeScreen({ navigation }) {
                       <Button 
                         mode="contained"
                         onPress={() => {
-                          console.log("Scanning QR for attendance");
                           closeModal();
+                          navigation.navigate('QRScanner', { eventTitle: selectedEvent.title });
                         }}
                         style={styles.modalActionButton}
                         buttonColor="#6B46C1"

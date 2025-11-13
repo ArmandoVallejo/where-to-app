@@ -20,14 +20,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { GluestackUIProvider } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
 
-// Pantallas
+// 🔹 Pantallas
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
 import MaterialDesignScreen from './screens/MaterialDesignScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import Lugares from './screens/Lugares';
+import HistoryScreen from './screens/HistoryScreen';
+import QRScannerScreen from './screens/QRScannerScreen';
 
+// Evita que el splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
 
 const Stack = createNativeStackNavigator();
@@ -45,6 +48,8 @@ function CustomDrawerContent(props) {
     { label: 'Perfil', icon: 'person-outline', route: 'Perfil' },
     { label: 'Eventos', icon: 'calendar-outline', route: 'Eventos' },
     { label: 'Lugares', icon: 'location-outline', route: 'Lugares' },
+    { label: 'Historial', icon: 'time-outline', route: 'History' },
+    { label: 'Escanear QR', icon: 'qr-code-outline', route: 'QRScanner' },
   ];
 
   const handleLogout = () => {
@@ -131,6 +136,22 @@ function DrawerNavigator() {
       <Drawer.Screen name="Perfil" component={ProfileScreen} />
       <Drawer.Screen name="Eventos" component={MaterialDesignScreen} />
       <Drawer.Screen name="Lugares" component={Lugares} />
+      <Drawer.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{
+          title: 'Historial de eventos',
+          headerShown: false,
+        }}
+      />
+      <Drawer.Screen
+        name="QRScanner"
+        component={QRScannerScreen}
+        options={{
+          title: 'Escanear QR',
+          headerShown: false,
+        }}
+      />
     </Drawer.Navigator>
   );
 }
@@ -151,38 +172,3 @@ export default function App() {
         setIsReady(true);
       }
     };
-    prepare();
-  }, []);
-
-  if (!isReady) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#ffffff',
-        }}
-      >
-        <ActivityIndicator size="large" color="#A855F7" />
-      </View>
-    );
-  }
-
-  return (
-    <PaperProvider>
-      <GluestackUIProvider config={config}>
-        <NavigationContainer>
-          <Stack.Navigator
-            initialRouteName="Login"
-            screenOptions={{ headerShown: false }}
-          >
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="Main" component={DrawerNavigator} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </GluestackUIProvider>
-    </PaperProvider>
-  );
-}
