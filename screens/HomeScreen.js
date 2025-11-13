@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   headerTitle: {
-    flexDirection: "column",
+    flexDirection: "row",
   },
   headerMainText: {
     fontSize: 16,

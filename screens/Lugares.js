@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Button } from 'react-native-paper'; // ← 🔹 usamos botón Material
 
 export default function Lugares({ navigation }) {
   const [lugares, setLugares] = useState([
@@ -16,19 +17,19 @@ export default function Lugares({ navigation }) {
     { id: 10, nombre: 'Departamento de Sistemas Computacionales', favorito: false, tipo: 'sistemas' },
   ]);
 
-  const [filtrarFavoritos, setFiltrarFavoritos] = useState(false);
-
   const toggleFavorito = (id) => {
     setLugares((prev) =>
       prev.map((l) => (l.id === id ? { ...l, favorito: !l.favorito } : l))
     );
   };
 
-  const toggleFiltro = () => setFiltrarFavoritos(!filtrarFavoritos);
+  const lugaresMostrados = lugares;
 
-  const lugaresMostrados = filtrarFavoritos
-    ? [...lugares].sort((a, b) => (b.favorito === a.favorito ? 0 : b.favorito ? 1 : -1))
-    : lugares;
+  const handleUbicacionActual = () => {
+    // Aquí puedes integrar geolocalización (expo-location o similar)
+    console.log('📍 Obtener ubicación actual...');
+    navigation.navigate('Home');
+  };
 
   return (
     <View style={styles.container}>
@@ -52,7 +53,6 @@ export default function Lugares({ navigation }) {
                 styles.lugarButton,
                 lugar.favorito && styles.lugarFavorito,
               ]}
-              // 👇 Aquí es donde pasa el parámetro dinámico
               onPress={() => navigation.navigate('Home', { tipo: lugar.tipo })}
             >
               <View style={styles.circle} />
@@ -71,26 +71,18 @@ export default function Lugares({ navigation }) {
         ))}
       </ScrollView>
 
-      {/* Footer */}
+      {/* Footer - Botón Material */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton}>
-          <Text style={styles.footerText}>Atrás</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.filterButton} onPress={toggleFiltro}>
-          <MaterialCommunityIcons
-            name={filtrarFavoritos ? 'filter-check' : 'filter-variant'}
-            size={20}
-            color="#4A3B75"
-          />
-          <Text style={styles.filterText}>
-            {filtrarFavoritos ? 'Favoritos' : 'Filtrar'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.footerButton}>
-          <Text style={styles.footerText}>Continuar</Text>
-        </TouchableOpacity>
+        <Button
+          mode="contained-tonal"
+          icon="map-marker"
+          onPress={handleUbicacionActual}
+          contentStyle={{ flexDirection: 'row-reverse' }} // icono a la izquierda
+          style={styles.locationButton}
+          labelStyle={styles.locationText}
+        >
+          Ubicación actual
+        </Button>
       </View>
     </View>
   );
@@ -158,33 +150,16 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 30,
-    alignItems: 'center',
   },
-  footerButton: {
-    backgroundColor: '#6A1B9A',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 25,
-  },
-  footerText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  locationButton: {
+    borderRadius: 25,
     backgroundColor: '#EDE3F7',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
   },
-  filterText: {
+  locationText: {
     color: '#4A3B75',
-    fontWeight: '500',
-    marginLeft: 5,
+    fontWeight: '600',
   },
 });
