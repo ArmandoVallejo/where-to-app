@@ -10,20 +10,19 @@ import {
   Alert,
 } from 'react-native';
 import { User, Mail, Phone, BookOpen, MapPin, Globe, Palette, HelpCircle, LogOut, Edit, X, Check, Eye, EyeOff, Lock } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 
 export default function ProfileScreen() {
+
+  const navigation = useNavigation();
+
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [helpModalVisible, setHelpModalVisible] = useState(false);
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
   
   const [selectedLanguage, setSelectedLanguage] = useState('Español');
   const [selectedTheme, setSelectedTheme] = useState('Claro');
-  
-  // Estados para el formulario de ayuda
-  const [asunto, setAsunto] = useState('');
-  const [descripcion, setDescripcion] = useState('');
   
   // Estados para cambio de contraseña
   const [currentPassword, setCurrentPassword] = useState('');
@@ -49,18 +48,7 @@ export default function ProfileScreen() {
     setEditModalVisible(false);
   };
 
-  const handleSendHelp = () => {
-    if (!asunto.trim() || !descripcion.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
-      return;
-    }
-    
-    Alert.alert('Éxito', 'Tu mensaje ha sido enviado. Nos pondremos en contacto contigo pronto.');
-    setAsunto('');
-    setDescripcion('');
-    setHelpModalVisible(false);
-  };
-
+  
   const handleChangePassword = () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert('Error', 'Por favor completa todos los campos');
@@ -198,7 +186,7 @@ export default function ProfileScreen() {
         <View style={[styles.section, { marginBottom: 32 }]}>
           <TouchableOpacity 
             style={styles.menuItem}
-            onPress={() => setHelpModalVisible(true)}
+            onPress={() => navigation.navigate('Help')}
           >
             <View style={[styles.iconContainer, { backgroundColor: '#dcfce7' }]}>
               <HelpCircle size={24} color="#16a34a" />
@@ -507,7 +495,7 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* Modal de Ayuda */}
-      <Modal
+      {/* <Modal
         animationType="slide"
         transparent={false}
         visible={helpModalVisible}
@@ -576,7 +564,7 @@ export default function ProfileScreen() {
             </View>
           </ScrollView>
         </View>
-      </Modal>
+      </Modal> */}
     </>
   );
 }

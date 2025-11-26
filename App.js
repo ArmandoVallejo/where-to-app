@@ -30,6 +30,7 @@ import Lugares from './screens/Lugares';
 import HistoryScreen from './screens/HistoryScreen';
 import QRScannerScreen from './screens/QRScannerScreen';
 import ParticipantsScreen from './screens/ParticipantsScreen';
+import HelpScreen from './screens/HelpScreen';
 
 // Evita que el splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -50,6 +51,7 @@ function CustomDrawerContent(props) {
     // { label: 'Eventos', icon: 'calendar-outline', route: 'Eventos' },
     { label: 'Lugares', icon: 'location-outline', route: 'Lugares' },
     { label: 'Historial', icon: 'time-outline', route: 'History' },
+    { label: 'Help', icon: 'person-outline', route: 'Help' },
     // { label: 'Escanear QR', icon: 'qr-code-outline', route: 'QRScanner' },
   ];
 
@@ -135,6 +137,7 @@ function DrawerNavigator() {
     >
       <Drawer.Screen name="Home" component={HomeScreen} options={{ title: 'Inicio' }} />
       <Drawer.Screen name="Perfil" component={ProfileScreen} />
+      <Drawer.Screen name="Help" component={HelpScreen} />
       {/* <Drawer.Screen name="Eventos" component={MaterialDesignScreen} /> */}
       <Drawer.Screen name="Lugares" component={Lugares} />
       <Drawer.Screen
