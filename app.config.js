@@ -15,6 +15,12 @@ const env = {
 module.exports = {
   expo: {
     ...(appJson.expo || {}),
+
+    android: {
+      ...(appJson.expo?.android || {}),
+      package: "com.whereto.app", // ← ⚠ IMPORTANTE: sin mayúsculas
+    },
+
     extra: {
       ...((appJson.expo && appJson.expo.extra) ? appJson.expo.extra : {}),
       ...env,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,14 +9,17 @@ import {
   Modal,
   Pressable,
   StatusBar,
+  PermissionsAndroid,
+  Platform,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { 
-  Card, 
-  Chip, 
-  Avatar, 
-  Button, 
+import {
+  Card,
+  Chip,
+  Avatar,
+  Button,
   IconButton,
   Portal,
   Dialog,
@@ -24,9 +27,17 @@ import {
   Divider,
   FAB,
   TextInput,
-  List
+  List,
+  Menu, // ← Mover Menu aquí
 } from "react-native-paper";
-import { DatePickerInput, TimePickerModal } from 'react-native-paper-dates';
+import { DatePickerInput, TimePickerModal } from "react-native-paper-dates";
+
+import { db } from "../config/config";
+import { ref, onValue } from "firebase/database";
+
+import { BleManager } from "react-native-ble-plx";
+
+const manager = new BleManager();
 
 // Mock data for events with registration states
 const MOCK_EVENTS = [
@@ -37,8 +48,10 @@ const MOCK_EVENTS = [
     date: "11/NOV/25", // Today
     time: "09:00 AM",
     participants: 20,
-    description: "Estudiantes y egresados conectan con empresas para encontrar residencias profesionales y oportunidades laborales.",
-    imageUri: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop",
+    description:
+      "Estudiantes y egresados conectan con empresas para encontrar residencias profesionales y oportunidades laborales.",
+    imageUri:
+      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop",
     category: "Deportes",
     professor: "",
     isAssignature: false,
@@ -53,8 +66,10 @@ const MOCK_EVENTS = [
     date: "11/NOV/25", // Today
     time: "10:00 AM",
     participants: 15,
-    description: "Torneo de baloncesto entre diferentes facultades. Participa y apoya a tu equipo.",
-    imageUri: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop",
+    description:
+      "Torneo de baloncesto entre diferentes facultades. Participa y apoya a tu equipo.",
+    imageUri:
+      "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop",
     category: "Deportes",
     professor: "",
     isAssignature: false,
@@ -69,8 +84,10 @@ const MOCK_EVENTS = [
     date: "15/NOV/25",
     time: "11:30 AM",
     participants: 30,
-    description: "Charla sobre servicio social y oportunidades de voluntariado en la comunidad.",
-    imageUri: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=300&fit=crop",
+    description:
+      "Charla sobre servicio social y oportunidades de voluntariado en la comunidad.",
+    imageUri:
+      "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=300&fit=crop",
     category: "Cultural",
     professor: "",
     isAssignature: false,
@@ -85,8 +102,10 @@ const MOCK_EVENTS = [
     date: "Lu - Vi",
     time: "07:00 AM",
     participants: 50,
-    description: "Elabora aplicaciones móviles para múltiples plataformas empleando tecnologías emergentes para el desarrollo de aplicaciones que resuelvan problemáticas del entorno.",
-    imageUri: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop",
+    description:
+      "Elabora aplicaciones móviles para múltiples plataformas empleando tecnologías emergentes para el desarrollo de aplicaciones que resuelvan problemáticas del entorno.",
+    imageUri:
+      "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop",
     category: "Academico",
     professor: "Profesor: Fernando Robles Casillas",
     isAssignature: true,
@@ -101,8 +120,10 @@ const MOCK_EVENTS = [
     date: "Lu - Vi",
     time: "11:30 AM",
     participants: 45,
-    description: "Aprende a desarrollar aplicaciones web modernas utilizando las últimas tecnologías y frameworks.",
-    imageUri: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=300&fit=crop",
+    description:
+      "Aprende a desarrollar aplicaciones web modernas utilizando las últimas tecnologías y frameworks.",
+    imageUri:
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=300&fit=crop",
     category: "Academico",
     professor: "Profesor: María González",
     isAssignature: true,
@@ -117,8 +138,10 @@ const MOCK_EVENTS = [
     date: "12/NOV/25",
     time: "07:00 PM",
     participants: 80,
-    description: "Noche de jazz con músicos locales e internacionales. Una experiencia musical única.",
-    imageUri: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=400&h=300&fit=crop",
+    description:
+      "Noche de jazz con músicos locales e internacionales. Una experiencia musical única.",
+    imageUri:
+      "https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=400&h=300&fit=crop",
     category: "Cultural",
     professor: "",
     isAssignature: false,
@@ -133,8 +156,10 @@ const MOCK_EVENTS = [
     date: "13/NOV/25",
     time: "03:00 PM",
     participants: 40,
-    description: "Torneo inter-facultades de futbol. Inscribe a tu equipo y compite por el trofeo.",
-    imageUri: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&h=300&fit=crop",
+    description:
+      "Torneo inter-facultades de futbol. Inscribe a tu equipo y compite por el trofeo.",
+    imageUri:
+      "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&h=300&fit=crop",
     category: "Deportes",
     professor: "",
     isAssignature: false,
@@ -149,8 +174,10 @@ const MOCK_EVENTS = [
     date: "14/NOV/25",
     time: "10:00 AM",
     participants: 25,
-    description: "Aprende técnicas básicas y avanzadas de fotografía digital con profesionales del área.",
-    imageUri: "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=400&h=300&fit=crop",
+    description:
+      "Aprende técnicas básicas y avanzadas de fotografía digital con profesionales del área.",
+    imageUri:
+      "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=400&h=300&fit=crop",
     category: "Cultural",
     professor: "",
     isAssignature: false,
@@ -165,8 +192,10 @@ const MOCK_EVENTS = [
     date: "16/NOV/25",
     time: "08:00 AM",
     participants: 60,
-    description: "Evento de programación de 24 horas. Forma tu equipo y crea soluciones innovadoras.",
-    imageUri: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=300&fit=crop",
+    description:
+      "Evento de programación de 24 horas. Forma tu equipo y crea soluciones innovadoras.",
+    imageUri:
+      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=300&fit=crop",
     category: "Academico",
     professor: "",
     isAssignature: false,
@@ -176,25 +205,211 @@ const MOCK_EVENTS = [
   },
 ];
 
-const CATEGORIES = ["Todos", "Deportes", "Cultural", "Academico", "Talleres", "Conferencias", "Sociales"];
+const CATEGORIES = [
+  "Todos",
+  "Deportes",
+  "Cultural",
+  "Academico",
+  "Talleres",
+  "Conferencias",
+  "Sociales",
+];
 
 export default function HomeScreen({ navigation }) {
+  //
+  const [buildings, setBuildings] = useState([]);
+  const [selectedBuilding, setSelectedBuilding] = useState(null);
+  const [menuVisible, setMenuVisible] = useState(false);
+
+  // BLE
+  const [scanActive, setScanActive] = useState(true);
+  const [nearBeacon, setNearBeacon] = useState(null);
+  const [beaconModalVisible, setBeaconModalVisible] = useState(false);
+  //
+
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [registeredEvents, setRegisteredEvents] = useState(
-    MOCK_EVENTS.filter(e => e.isRegistered).map(e => e.id)
+    MOCK_EVENTS.filter((e) => e.isRegistered).map((e) => e.id)
   );
 
   // New event modal states
   const [newEventModalVisible, setNewEventModalVisible] = useState(false);
-  const [eventName, setEventName] = useState('');
-  const [category, setCategory] = useState('');
+  const [eventName, setEventName] = useState("");
+  const [category, setCategory] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [date, setDate] = useState(undefined);
   const [time, setTime] = useState({ hours: 12, minutes: 0 });
   const [timePickerVisible, setTimePickerVisible] = useState(false);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState("");
+
+  //
+  //
+  const requestBluetoothPermissions = async () => {
+    if (Platform.OS === "android") {
+      if (Platform.Version >= 31) {
+        // Android 12+
+        try {
+          const granted = await PermissionsAndroid.requestMultiple([
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          ]);
+
+          const allGranted = Object.values(granted).every(
+            (permission) => permission === PermissionsAndroid.RESULTS.GRANTED
+          );
+
+          if (!allGranted) {
+            Alert.alert(
+              "Permisos necesarios",
+              "La app necesita permisos de Bluetooth y ubicación para detectar beacons"
+            );
+            return false;
+          }
+          return true;
+        } catch (err) {
+          console.error("Error solicitando permisos:", err);
+          return false;
+        }
+      } else {
+        // Android 11 o menor
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+          );
+          return granted === PermissionsAndroid.RESULTS.GRANTED;
+        } catch (err) {
+          console.error("Error solicitando permisos:", err);
+          return false;
+        }
+      }
+    }
+    // iOS se maneja automáticamente con Info.plist
+    return true;
+  };
+  //
+
+  //
+  useEffect(() => {
+    const buildingsRef = ref(db, "edificios");
+
+    const unsubscribe = onValue(buildingsRef, (snapshot) => {
+      const data = snapshot.val();
+
+      if (data) {
+        const list = Object.keys(data).map((key) => ({
+          id: key,
+          ...data[key],
+        }));
+
+        setBuildings(list);
+
+        // Seleccionar el primero por defecto
+        if (!selectedBuilding) {
+          setSelectedBuilding(list[0]);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+  //
+
+  //
+  //
+
+  useEffect(() => {
+    let stateSubscription = null;
+    let isScanning = false;
+
+    if (!scanActive) return;
+
+    const initializeBLE = async () => {
+      const hasPermissions = await requestBluetoothPermissions();
+      if (!hasPermissions) {
+        console.log("❌ Permisos denegados");
+        return;
+      }
+
+      if (buildings.length === 0) {
+        console.log("⏳ Esperando edificios de Firebase...");
+        return;
+      }
+
+      // Si el modal ya está visible, no escanear
+      if (beaconModalVisible) {
+        console.log("⏸️ Modal visible, escaneo pausado");
+        return;
+      }
+
+      console.log("🔍 Esperando a que el Bluetooth esté encendido...");
+      console.log(
+        "📋 Edificios a detectar:",
+        buildings.map((b) => ({
+          name: b.name,
+          mac: b.mac,
+        }))
+      );
+
+      stateSubscription = manager.onStateChange((state) => {
+        if (state === "PoweredOn" && !isScanning) {
+          console.log("🔵 Bluetooth encendido, iniciando escaneo...");
+          isScanning = true;
+
+          manager.startDeviceScan(null, null, (error, device) => {
+            if (error) {
+              console.log("⚠ Error escaneando:", error);
+              return;
+            }
+
+            if (!device || !device.id) return;
+
+            // Normalizar la MAC del dispositivo detectado
+            const deviceMac = device.id.toUpperCase().replace(/:/g, "");
+
+            // Buscar si este dispositivo está en nuestra lista de edificios
+            const found = buildings.find((b) => {
+              if (!b.mac) return false; // Si no tiene MAC, ignorar
+              const buildingMac = b.mac.toUpperCase().replace(/:/g, "");
+              return buildingMac === deviceMac;
+            });
+
+            if (found) {
+              console.log("🏢 ¡EDIFICIO DETECTADO!");
+              console.log("   • Nombre:", found.name);
+              console.log("   • MAC:", device.id);
+              console.log("   • RSSI:", device.rssi);
+              console.log("-----------------------------------");
+
+              // Si está cerca (señal fuerte)
+              if (device.rssi > -70) {
+                console.log("🎯 Edificio CERCA, mostrando modal...");
+                setNearBeacon(found);
+                setBeaconModalVisible(true);
+                manager.stopDeviceScan();
+                isScanning = false;
+                setScanActive(false)
+              }
+            }
+          });
+
+          stateSubscription.remove();
+        }
+      }, true);
+    };
+
+    initializeBLE();
+
+    return () => {
+      console.log("🛑 Limpieza de escaneo");
+      manager.stopDeviceScan();
+      if (stateSubscription) stateSubscription.remove();
+      isScanning = false;
+    };
+  }, [buildings, beaconModalVisible]);
+  //
 
   const onAddEventHandler = () => {
     setNewEventModalVisible(true);
@@ -209,7 +424,7 @@ export default function HomeScreen({ navigation }) {
       eventName,
       category,
       date,
-      time: `${time.hours}:${String(time.minutes).padStart(2, '0')}`,
+      time: `${time.hours}:${String(time.minutes).padStart(2, "0")}`,
       description,
     });
     setNewEventModalVisible(false);
@@ -223,18 +438,18 @@ export default function HomeScreen({ navigation }) {
   // Filter and sort events
   const getFilteredAndSortedEvents = () => {
     let events = MOCK_EVENTS;
-    
+
     // Filter by category
     if (selectedCategory !== "Todos") {
       events = events.filter((event) => event.category === selectedCategory);
     }
-    
+
     // Sort: Today's events first, then by date/time
     return events.sort((a, b) => {
       // Prioritize today's events
       if (a.isToday && !b.isToday) return -1;
       if (!a.isToday && b.isToday) return 1;
-      
+
       // Then sort by date and time
       return a.sortDate - b.sortDate;
     });
@@ -243,9 +458,9 @@ export default function HomeScreen({ navigation }) {
   const filteredEvents = getFilteredAndSortedEvents();
 
   const toggleRegistration = (eventId) => {
-    setRegisteredEvents(prev => {
+    setRegisteredEvents((prev) => {
       if (prev.includes(eventId)) {
-        return prev.filter(id => id !== eventId);
+        return prev.filter((id) => id !== eventId);
       } else {
         return [...prev, eventId];
       }
@@ -268,32 +483,91 @@ export default function HomeScreen({ navigation }) {
     setSelectedEvent(null);
   };
 
-  const handleLocationPress = () => {
-    // Navigate to location/map screen
-    console.log("Navigate to location screen");
-    navigation.navigate('Lugares');
-  };
+  // const handleLocationPress = () => {
+  //   // Navigate to location/map screen
+  //   console.log("Navigate to location screen");
+  //   navigation.navigate("Lugares");
+  // };
 
   return (
     <SafeAreaView style={styles.container}>
+      {/*  */}
+      <Portal>
+        <Dialog
+          visible={beaconModalVisible}
+          onDismiss={() => setBeaconModalVisible(false)}
+        >
+          <Dialog.Title>Edificio detectado</Dialog.Title>
+          <Dialog.Content>
+            <Text>
+              Estás cerca de:{" "}
+              <Text style={{ fontWeight: "bold" }}>{nearBeacon?.name}</Text>
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setBeaconModalVisible(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onPress={() => {
+                setSelectedBuilding(nearBeacon);
+                setBeaconModalVisible(false);
+              }}
+            >
+              Cambiar
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+      {/*  */}
+
       {/* Header */}
       <View style={styles.header}>
+        {/* Título */}
         <View style={styles.headerLeft}>
           <View style={styles.headerTitle}>
             <Text style={styles.headerMainText}>Eventos /</Text>
             <Text style={styles.headerSubText}>Salones</Text>
           </View>
         </View>
-        <TouchableOpacity onPress={() => setAdmin(!admin)} style={{
-          marginLeft: 15
-        }}>
-          <Text style={styles.adminButtonText}>{admin ? "Salir Admin" : "Entrar Admin"}</Text>
+
+        {/* Botón Admin */}
+        <TouchableOpacity
+          onPress={() => setAdmin(!admin)}
+          style={{ marginLeft: 15 }}
+        >
+          <Text style={styles.adminButtonText}>
+            {admin ? "Salir Admin" : "Entrar Admin"}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleLocationPress} style={styles.locationButton}>
-          <Text style={styles.locationText}>Auditorio</Text>
-          <Ionicons name="location-sharp" size={20} color="#000" />
-        </TouchableOpacity>
-        
+
+        {/* Selector de edificio */}
+        <Menu
+          visible={menuVisible}
+          onDismiss={() => setMenuVisible(false)}
+          anchor={
+            <TouchableOpacity
+              onPress={() => setMenuVisible(true)}
+              style={styles.locationButton}
+            >
+              <Text style={styles.locationText}>
+                {selectedBuilding ? selectedBuilding.name : "Seleccionar"}
+              </Text>
+              <Ionicons name="location-sharp" size={20} color="#000" />
+            </TouchableOpacity>
+          }
+        >
+          {buildings.map((b) => (
+            <Menu.Item
+              key={b.id}
+              onPress={() => {
+                setSelectedBuilding(b);
+                setMenuVisible(false);
+              }}
+              title={b.name}
+            />
+          ))}
+        </Menu>
       </View>
 
       {/* Category Chips */}
@@ -344,8 +618,8 @@ export default function HomeScreen({ navigation }) {
             mode="elevated"
           >
             <View style={styles.eventHeader}>
-              <Avatar.Text 
-                size={40} 
+              <Avatar.Text
+                size={40}
                 label={event.title.charAt(0).toUpperCase()}
                 style={styles.eventIconContainer}
                 labelStyle={styles.eventIcon}
@@ -364,7 +638,10 @@ export default function HomeScreen({ navigation }) {
             </View>
 
             {event.imageUri && (
-              <Card.Cover source={{ uri: event.imageUri }} style={styles.eventImage} />
+              <Card.Cover
+                source={{ uri: event.imageUri }}
+                style={styles.eventImage}
+              />
             )}
 
             <Card.Content style={styles.cardContent}>
@@ -375,7 +652,9 @@ export default function HomeScreen({ navigation }) {
                 </View>
                 <View style={styles.participantsContainer}>
                   <Ionicons name="people" size={16} color="#666" />
-                  <Text style={styles.participantsText}>{event.participants}</Text>
+                  <Text style={styles.participantsText}>
+                    {event.participants}
+                  </Text>
                 </View>
               </View>
 
@@ -388,62 +667,72 @@ export default function HomeScreen({ navigation }) {
 
             <Card.Actions style={styles.cardActions}>
               {/* Render buttons based on event type and registration status */}
-              {!event.isAssignature && event.isToday && isEventRegistered(event.id) && (
-                <Button 
-                  mode="contained"
-                  onPress={() => openEventModal(event)}
-                  style={styles.attendanceButton}
-                  icon="eye"
-                  buttonColor="#6B46C1"
-                >
-                  Ver detalles
-                </Button>
-              )}
+              {!event.isAssignature &&
+                event.isToday &&
+                isEventRegistered(event.id) && (
+                  <Button
+                    mode="contained"
+                    onPress={() => openEventModal(event)}
+                    style={styles.attendanceButton}
+                    icon="eye"
+                    buttonColor="#6B46C1"
+                  >
+                    Ver detalles
+                  </Button>
+                )}
 
-              {!event.isAssignature && event.isToday && !isEventRegistered(event.id) && (
-                <Button 
-                  mode="contained"
-                  onPress={() => {
-                    navigation.navigate('QRScanner', { eventTitle: event.title });
-                  }}
-                  style={styles.scanButton}
-                  icon="qrcode"
-                  buttonColor="#6B46C1"
-                >
-                  Escanear QR
-                </Button>
-              )}
+              {!event.isAssignature &&
+                event.isToday &&
+                !isEventRegistered(event.id) && (
+                  <Button
+                    mode="contained"
+                    onPress={() => {
+                      navigation.navigate("QRScanner", {
+                        eventTitle: event.title,
+                      });
+                    }}
+                    style={styles.scanButton}
+                    icon="qrcode"
+                    buttonColor="#6B46C1"
+                  >
+                    Escanear QR
+                  </Button>
+                )}
 
-              {!event.isAssignature && !event.isToday && !isEventRegistered(event.id) && (
-                <Button 
-                  mode="outlined"
-                  onPress={() => {
-                    toggleRegistration(event.id);
-                  }}
-                  style={styles.registrationButton}
-                  icon="account-plus"
-                  textColor="#6B46C1"
-                >
-                  Registrarse
-                </Button>
-              )}
+              {!event.isAssignature &&
+                !event.isToday &&
+                !isEventRegistered(event.id) && (
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      toggleRegistration(event.id);
+                    }}
+                    style={styles.registrationButton}
+                    icon="account-plus"
+                    textColor="#6B46C1"
+                  >
+                    Registrarse
+                  </Button>
+                )}
 
-              {!event.isAssignature && !event.isToday && isEventRegistered(event.id) && (
-                <Button 
-                  mode="outlined"
-                  onPress={() => {
-                    toggleRegistration(event.id);
-                  }}
-                  style={styles.registeredButton}
-                  icon="check-circle"
-                  textColor="#10B981"
-                >
-                  Registrado
-                </Button>
-              )}
+              {!event.isAssignature &&
+                !event.isToday &&
+                isEventRegistered(event.id) && (
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      toggleRegistration(event.id);
+                    }}
+                    style={styles.registeredButton}
+                    icon="check-circle"
+                    textColor="#10B981"
+                  >
+                    Registrado
+                  </Button>
+                )}
 
               {event.isAssignature && (
-                <Button 
+                <Button
                   mode="outlined"
                   onPress={() => openEventModal(event)}
                   style={styles.assignatureButton}
@@ -469,9 +758,9 @@ export default function HomeScreen({ navigation }) {
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate('Perfil')}
+          onPress={() => navigation.navigate("Perfil")}
         >
           <Ionicons name="person-outline" size={24} color="#666" />
           <Text style={styles.navText}>Perfil</Text>
@@ -481,9 +770,9 @@ export default function HomeScreen({ navigation }) {
           <Text style={[styles.navText, styles.navTextActive]}>Inicio</Text>
           <View style={styles.activeIndicator} />
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate('History')}
+          onPress={() => navigation.navigate("History")}
         >
           <Ionicons name="calendar-outline" size={24} color="#666" />
           <Text style={styles.navText}>Eventos</Text>
@@ -499,42 +788,49 @@ export default function HomeScreen({ navigation }) {
           onRequestClose={closeModal}
         >
           <Pressable style={styles.modalOverlay} onPress={closeModal}>
-            <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <Pressable
+              style={styles.modalContent}
+              onPress={(e) => e.stopPropagation()}
+            >
               {selectedEvent && (
                 <>
                   <Surface style={styles.modalHeader} elevation={0}>
-                    <Avatar.Text 
-                      size={48} 
+                    <Avatar.Text
+                      size={48}
                       label={selectedEvent.title.charAt(0).toUpperCase()}
                       style={styles.modalIconContainer}
                       labelStyle={styles.modalIcon}
                     />
                     <View style={styles.modalHeaderText}>
-                      <Text style={styles.modalTitle}>{selectedEvent.title}</Text>
+                      <Text style={styles.modalTitle}>
+                        {selectedEvent.title}
+                      </Text>
                       <Text style={styles.modalSubtitle}>
                         {selectedEvent.date} {selectedEvent.time}
                       </Text>
                     </View>
                     {/* Only show QR button for today's events where user is not registered */}
-                    {!selectedEvent.isAssignature && selectedEvent.isToday && !isEventRegistered(selectedEvent.id) && (
-                      <IconButton
-                        icon="qrcode"
-                        size={24}
-                        iconColor="#fff"
-                        containerColor="#6B46C1"
-                        onPress={() => {
-                          closeModal();
-                          navigation.navigate('QRScanner', { eventTitle: selectedEvent.title });
-                        }}
-                      />
-                    )}
+                    {!selectedEvent.isAssignature &&
+                      selectedEvent.isToday &&
+                      !isEventRegistered(selectedEvent.id) && (
+                        <IconButton
+                          icon="qrcode"
+                          size={24}
+                          iconColor="#fff"
+                          containerColor="#6B46C1"
+                          onPress={() => {
+                            closeModal();
+                            navigation.navigate("QRScanner", {
+                              eventTitle: selectedEvent.title,
+                            });
+                          }}
+                        />
+                      )}
                     {/* Show close button for other cases */}
-                    {(selectedEvent.isAssignature || !selectedEvent.isToday || isEventRegistered(selectedEvent.id)) && (
-                      <IconButton
-                        icon="close"
-                        size={24}
-                        onPress={closeModal}
-                      />
+                    {(selectedEvent.isAssignature ||
+                      !selectedEvent.isToday ||
+                      isEventRegistered(selectedEvent.id)) && (
+                      <IconButton icon="close" size={24} onPress={closeModal} />
                     )}
                   </Surface>
 
@@ -554,22 +850,30 @@ export default function HomeScreen({ navigation }) {
 
                     <View style={styles.modalInfoRow}>
                       <Ionicons name="calendar" size={20} color="#666" />
-                      <Text style={styles.modalInfoText}>{selectedEvent.date}</Text>
+                      <Text style={styles.modalInfoText}>
+                        {selectedEvent.date}
+                      </Text>
                     </View>
 
                     <View style={styles.modalInfoRow}>
                       <Ionicons name="time" size={20} color="#666" />
-                      <Text style={styles.modalInfoText}>{selectedEvent.time}</Text>
+                      <Text style={styles.modalInfoText}>
+                        {selectedEvent.time}
+                      </Text>
                     </View>
 
                     <View style={styles.modalInfoRow}>
                       <Ionicons name="people" size={20} color="#666" />
-                      <Text style={styles.modalInfoText}>{selectedEvent.participants}</Text>
+                      <Text style={styles.modalInfoText}>
+                        {selectedEvent.participants}
+                      </Text>
                     </View>
 
                     <View style={styles.modalInfoRow}>
                       <Ionicons name="location" size={20} color="#666" />
-                      <Text style={styles.modalInfoText}>{selectedEvent.location}</Text>
+                      <Text style={styles.modalInfoText}>
+                        {selectedEvent.location}
+                      </Text>
                     </View>
 
                     <Text style={styles.modalDescription}>
@@ -612,9 +916,9 @@ export default function HomeScreen({ navigation }) {
                           icon="account-group"
                           onPress={() => {
                             closeModal();
-                            navigation.navigate("Participants", { 
+                            navigation.navigate("Participants", {
                               eventId: selectedEvent.id,
-                              eventName: selectedEvent.title 
+                              eventName: selectedEvent.title,
                             });
                           }}
                           style={styles.adminButton}
@@ -635,50 +939,61 @@ export default function HomeScreen({ navigation }) {
                     >
                       Cancelar
                     </Button>
-                    
+
                     {/* Show different actions based on event type and registration */}
-                    {!admin && !selectedEvent.isAssignature && selectedEvent.isToday && !isEventRegistered(selectedEvent.id) && (
-                      <Button 
-                        mode="contained"
-                        onPress={() => {
-                          closeModal();
-                          navigation.navigate('QRScanner', { eventTitle: selectedEvent.title });
-                        }}
-                        style={styles.modalActionButton}
-                        buttonColor="#6B46C1"
-                      >
-                        Escanear QR
-                      </Button>
-                    )}
-                    
-                    {!admin && !selectedEvent.isAssignature && !selectedEvent.isToday && !isEventRegistered(selectedEvent.id) && (
-                      <Button 
-                        mode="contained"
-                        onPress={() => {
-                          toggleRegistration(selectedEvent.id);
-                          closeModal();
-                        }}
-                        style={styles.modalActionButton}
-                        buttonColor="#6B46C1"
-                      >
-                        Registrarse
-                      </Button>
-                    )}
-                    
-                    {!admin && !selectedEvent.isAssignature && !selectedEvent.isToday && isEventRegistered(selectedEvent.id) && (
-                      <Button 
-                        mode="contained"
-                        onPress={() => {
-                          toggleRegistration(selectedEvent.id);
-                          closeModal();
-                        }}
-                        style={styles.modalUnregisterButton}
-                        buttonColor="#FEF2F2"
-                        textColor="#EF4444"
-                      >
-                        Cancelar registro
-                      </Button>
-                    )}
+                    {!admin &&
+                      !selectedEvent.isAssignature &&
+                      selectedEvent.isToday &&
+                      !isEventRegistered(selectedEvent.id) && (
+                        <Button
+                          mode="contained"
+                          onPress={() => {
+                            closeModal();
+                            navigation.navigate("QRScanner", {
+                              eventTitle: selectedEvent.title,
+                            });
+                          }}
+                          style={styles.modalActionButton}
+                          buttonColor="#6B46C1"
+                        >
+                          Escanear QR
+                        </Button>
+                      )}
+
+                    {!admin &&
+                      !selectedEvent.isAssignature &&
+                      !selectedEvent.isToday &&
+                      !isEventRegistered(selectedEvent.id) && (
+                        <Button
+                          mode="contained"
+                          onPress={() => {
+                            toggleRegistration(selectedEvent.id);
+                            closeModal();
+                          }}
+                          style={styles.modalActionButton}
+                          buttonColor="#6B46C1"
+                        >
+                          Registrarse
+                        </Button>
+                      )}
+
+                    {!admin &&
+                      !selectedEvent.isAssignature &&
+                      !selectedEvent.isToday &&
+                      isEventRegistered(selectedEvent.id) && (
+                        <Button
+                          mode="contained"
+                          onPress={() => {
+                            toggleRegistration(selectedEvent.id);
+                            closeModal();
+                          }}
+                          style={styles.modalUnregisterButton}
+                          buttonColor="#FEF2F2"
+                          textColor="#EF4444"
+                        >
+                          Cancelar registro
+                        </Button>
+                      )}
                   </View>
                 </>
               )}
@@ -713,14 +1028,14 @@ export default function HomeScreen({ navigation }) {
                   title={
                     category
                       ? `Categoría: ${category}`
-                      : 'Seleccionar categoría'
+                      : "Seleccionar categoría"
                   }
                   expanded={expanded}
                   onPress={() => setExpanded(!expanded)}
                   left={(props) => <List.Icon {...props} icon="folder" />}
                   style={styles.accordion}
                 >
-                  {['Académico', 'Deportivo', 'Servicio social', 'Otro'].map(
+                  {["Académico", "Deportivo", "Servicio social", "Otro"].map(
                     (item) => (
                       <List.Item
                         key={item}
@@ -757,14 +1072,14 @@ export default function HomeScreen({ navigation }) {
                 icon="clock"
                 onPress={() => setTimePickerVisible(true)}
                 style={styles.roundedButton}
-                labelStyle={{ textTransform: 'none' }}
+                labelStyle={{ textTransform: "none" }}
               >
                 {time
                   ? `Hora seleccionada: ${String(time.hours).padStart(
                       2,
-                      '0'
-                    )}:${String(time.minutes).padStart(2, '0')}`
-                  : 'Seleccionar hora'}
+                      "0"
+                    )}:${String(time.minutes).padStart(2, "0")}`
+                  : "Seleccionar hora"}
               </Button>
             </View>
 
@@ -792,7 +1107,7 @@ export default function HomeScreen({ navigation }) {
               <Button
                 mode="contained"
                 onPress={onSaveEvent}
-                style={[styles.roundedButton, { backgroundColor: '#6200ee' }]}
+                style={[styles.roundedButton, { backgroundColor: "#6200ee" }]}
               >
                 Guardar
               </Button>
@@ -819,8 +1134,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F5F5F5",
   },
-  fab:{
-    position: 'absolute',
+  fab: {
+    position: "absolute",
     margin: 40,
     right: 0,
     bottom: 100,
@@ -1138,17 +1453,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   modalContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 20,
     margin: 20,
     borderRadius: 12,
-    maxHeight: '85%',
+    maxHeight: "85%",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-    color: '#333',
+    color: "#333",
   },
   divider: {
     marginBottom: 20,
@@ -1160,7 +1475,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   accordion: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     borderRadius: 8,
   },
   textArea: {
@@ -1170,14 +1485,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 10,
     marginTop: 20,
   },
   adminButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     padding: 16,
     gap: 8,
   },

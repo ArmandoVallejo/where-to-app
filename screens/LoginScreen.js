@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Image, Alert } from 'react-native';
+import React, { useState } from "react";
+import { Image, Alert } from "react-native";
 import {
   Box,
   VStack,
@@ -12,42 +12,36 @@ import {
   Pressable,
   Heading,
   Card,
-} from '@gluestack-ui/themed';
-import { useNavigation } from '@react-navigation/native';
+} from "@gluestack-ui/themed";
+import { useNavigation } from "@react-navigation/native";
+import { ref, query, orderByChild, equalTo, get } from 'firebase/database';
+import { db } from "../config/config";
 
 export default function LoginScreen() {
   const navigation = useNavigation();
-  const [control, setControl] = useState('');
-  const [password, setPassword] = useState('');
-
-  // Simulación de usuario válido
-  const validUser = {
-    control: '11111111',
-    password: 'Hola1234#',
-  };
-
+  const [control, setControl] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const validateControlNumber = (value) => {
-    // Acepta: "19151677", "C19151677", "c19151677"
     const regex = /^[Cc]?\d{8,9}$/;
     return regex.test(value);
   };
 
   const validatePassword = (value) => {
-    // Debe tener al menos: 1 mayúscula, 1 minúscula, 1 carácter especial
     const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*.,?_=+-]).{6,}$/;
     return regex.test(value);
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!control.trim() || !password.trim()) {
-      Alert.alert('Error', 'Por favor llena todos los campos');
+      Alert.alert("Error", "Por favor llena todos los campos");
       return;
     }
 
     if (!validateControlNumber(control)) {
       Alert.alert(
-        'Error',
+        "Error",
         'El número de control debe tener 8-9 caracteres y puede comenzar con "C"'
       );
       return;
@@ -55,19 +49,61 @@ export default function LoginScreen() {
 
     if (!validatePassword(password)) {
       Alert.alert(
-        'Error',
-        'La contraseña debe contener al menos una mayúscula, una minúscula y un carácter especial'
+        "Error",
+        "La contraseña debe contener al menos una mayúscula, una minúscula y un carácter especial"
       );
       return;
     }
 
-    // Validación de credenciales simuladas
-    if (control === validUser.control && password === validUser.password) {
-      Alert.alert('Bienvenido', 'Inicio de sesión exitoso', [
-        { text: 'OK', onPress: () => navigation.navigate('Main') },
+    setLoading(true);
+
+    try {
+      // Buscar usuario por número de control
+      const usersRef = ref(db, "users");
+      const userQuery = query(
+        usersRef,
+        orderByChild("control"),
+        equalTo(control)
+      );
+      const snapshot = await get(userQuery);
+
+      if (!snapshot.exists()) {
+        Alert.alert("Error", "Usuario no encontrado");
+        setLoading(false);
+        return;
+      }
+
+      // Obtener los datos del usuario
+      const userData = Object.values(snapshot.val())[0];
+      const userId = Object.keys(snapshot.val())[0];
+
+      // Verificar contraseña
+      if (userData.password !== password) {
+        Alert.alert("Error", "Contraseña incorrecta");
+        setLoading(false);
+        return;
+      }
+
+      // Login exitoso
+      console.log("✅ Login exitoso:", userData);
+
+      Alert.alert("Bienvenido", `Hola ${userData.control}`, [
+        {
+          text: "OK",
+          onPress: () =>
+            navigation.replace("Main", {
+              user: {
+                id: userId,
+                ...userData,
+              },
+            }),
+        },
       ]);
-    } else {
-      Alert.alert('Error', 'Credenciales incorrectas');
+    } catch (error) {
+      console.error("❌ Error en login:", error);
+      Alert.alert("Error", "Ocurrió un error al iniciar sesión");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,7 +112,7 @@ export default function LoginScreen() {
       {/* Imagen superior */}
       <Box alignItems="center" mb="$4">
         <Image
-          source={require('../assets/avatar.png')} 
+          source={require("../assets/avatar.png")}
           style={{
             width: 150,
             height: 150,
@@ -134,15 +170,20 @@ export default function LoginScreen() {
           </Box>
 
           {/* Botón Sign In */}
-          <Button bg="$purple600" borderRadius="$md" mt="$2" onPress={handleLogin}>
+          <Button
+            bg="$purple600"
+            borderRadius="$md"
+            mt="$2"
+            onPress={handleLogin}
+          >
             <ButtonText color="$white">Sign In</ButtonText>
           </Button>
 
           {/* Texto Create one */}
           <Center>
             <Text color="$black">
-              Don´t have an account yet?{' '}
-              <Pressable onPress={() => navigation.navigate('Register')}>
+              Don´t have an account yet?{" "}
+              <Pressable onPress={() => navigation.navigate("Register")}>
                 <Text color="$purple600" bold>
                   Create one
                 </Text>
