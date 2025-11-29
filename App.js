@@ -1,35 +1,36 @@
 // App.js
-import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
-import * as SplashScreen from 'expo-splash-screen';
-import { NavigationContainer } from '@react-navigation/native';
-import {
-  createNativeStackNavigator
-} from '@react-navigation/native-stack';
+import React, { useEffect, useState } from "react";
+import { View, ActivityIndicator } from "react-native";
+import * as SplashScreen from "expo-splash-screen";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
   createDrawerNavigator,
   DrawerContentScrollView,
-  DrawerItem
-} from '@react-navigation/drawer';
+  DrawerItem,
+} from "@react-navigation/drawer";
 import {
   PaperProvider,
   Drawer as PaperDrawer,
-  useTheme
-} from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
-import { GluestackUIProvider } from '@gluestack-ui/themed';
-import { config } from '@gluestack-ui/config';
+  useTheme,
+} from "react-native-paper";
+import { Ionicons } from "@expo/vector-icons";
+import { GluestackUIProvider } from "@gluestack-ui/themed";
+import { config } from "@gluestack-ui/config";
 
 // 🔹 Pantallas
-import LoginScreen from './screens/LoginScreen';
-import RegisterScreen from './screens/RegisterScreen';
-import HomeScreen from './screens/HomeScreen';
-import MaterialDesignScreen from './screens/MaterialDesignScreen';
-import ProfileScreen from './screens/ProfileScreen';
-import Lugares from './screens/Lugares';
-import HistoryScreen from './screens/HistoryScreen';
-import QRScannerScreen from './screens/QRScannerScreen';
-import ParticipantsScreen from './screens/ParticipantsScreen';
+import LoginScreen from "./screens/LoginScreen";
+import RegisterScreen from "./screens/RegisterScreen";
+import HomeScreen from "./screens/HomeScreen";
+import MaterialDesignScreen from "./screens/MaterialDesignScreen";
+import ProfileScreen from "./screens/ProfileScreen";
+import Lugares from "./screens/Lugares";
+import HistoryScreen from "./screens/HistoryScreen";
+import QRScannerScreen from "./screens/QRScannerScreen";
+import ParticipantsScreen from "./screens/ParticipantsScreen";
+import HelpScreen from "./screens/HelpScreen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SEED_VERSION, runSeed  } from "./config/seed";
 
 // Evita que el splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -37,19 +38,19 @@ SplashScreen.preventAutoHideAsync();
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 
-
 // 🔹 Drawer personalizado con Logout
 function CustomDrawerContent(props) {
   const theme = useTheme();
   const { navigation } = props;
-  const [active, setActive] = useState('Home');
+  const [active, setActive] = useState("Home");
 
   const menuItems = [
-    { label: 'Inicio', icon: 'home-outline', route: 'Home' },
-    { label: 'Perfil', icon: 'person-outline', route: 'Perfil' },
+    { label: "Inicio", icon: "home-outline", route: "Home" },
+    { label: "Perfil", icon: "person-outline", route: "Perfil" },
     // { label: 'Eventos', icon: 'calendar-outline', route: 'Eventos' },
-    { label: 'Lugares', icon: 'location-outline', route: 'Lugares' },
-    { label: 'Historial', icon: 'time-outline', route: 'History' },
+    { label: "Lugares", icon: "location-outline", route: "Lugares" },
+    { label: "Historial", icon: "time-outline", route: "History" },
+    { label: "Help", icon: "person-outline", route: "Help" },
     // { label: 'Escanear QR', icon: 'qr-code-outline', route: 'QRScanner' },
   ];
 
@@ -57,14 +58,14 @@ function CustomDrawerContent(props) {
     // 👉 Aquí podrías limpiar el estado o token del usuario
     navigation.reset({
       index: 0,
-      routes: [{ name: 'Login' }],
+      routes: [{ name: "Login" }],
     });
   };
 
   return (
     <DrawerContentScrollView
       {...props}
-      contentContainerStyle={{ flex: 1, justifyContent: 'space-between' }}
+      contentContainerStyle={{ flex: 1, justifyContent: "space-between" }}
     >
       {/* 🔹 Sección principal */}
       <View>
@@ -108,15 +109,14 @@ function CustomDrawerContent(props) {
           )}
           onPress={handleLogout}
           labelStyle={{
-            color: '#DC2626',
-            fontWeight: 'bold',
+            color: "#DC2626",
+            fontWeight: "bold",
           }}
         />
       </PaperDrawer.Section>
     </DrawerContentScrollView>
   );
 }
-
 
 // 🔹 Drawer principal
 function DrawerNavigator() {
@@ -126,23 +126,27 @@ function DrawerNavigator() {
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: '#A855F7' },
-        headerTintColor: '#fff',
-        drawerActiveBackgroundColor: '#EDE9FE',
-        drawerActiveTintColor: '#6D28D9',
+        headerStyle: { backgroundColor: "#A855F7" },
+        headerTintColor: "#fff",
+        drawerActiveBackgroundColor: "#EDE9FE",
+        drawerActiveTintColor: "#6D28D9",
         drawerLabelStyle: { fontSize: 15, marginLeft: -10 },
       }}
     >
-      <Drawer.Screen name="Home" component={HomeScreen} options={{ title: 'Inicio' }} />
+      <Drawer.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ title: "Inicio" }}
+      />
       <Drawer.Screen name="Perfil" component={ProfileScreen} />
+      <Drawer.Screen name="Help" component={HelpScreen} />
       {/* <Drawer.Screen name="Eventos" component={MaterialDesignScreen} /> */}
       <Drawer.Screen name="Lugares" component={Lugares} />
       <Drawer.Screen
         name="History"
         component={HistoryScreen}
         options={{
-          title: 'Historial de eventos',
-
+          title: "Historial de eventos",
         }}
       />
       {/* <Drawer.Screen
@@ -156,16 +160,41 @@ function DrawerNavigator() {
       <Drawer.Screen
         name="Participants"
         component={ParticipantsScreen}
-        options={{ title: 'Participantes' }}
+        options={{ title: "Participantes" }}
       />
     </Drawer.Navigator>
   );
 }
 
-
 // 🔹 App principal
 export default function App() {
   const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const initializeSeed = async () => {
+      try {
+        console.log("🔍 Revisando versión del seed...");
+
+        const storedVersion = await AsyncStorage.getItem("seed_version");
+
+        if (storedVersion === SEED_VERSION) {
+          console.log("⚠️ Seed ya está actualizado. No se ejecuta.");
+          return;
+        }
+
+        console.log("🌱 Seed desactualizado o no existe. Ejecutando...");
+        await runSeed();
+
+        // Guardar nueva versión
+        await AsyncStorage.setItem("seed_version", SEED_VERSION);
+        console.log("✅ Seed actualizado a versión:", SEED_VERSION);
+      } catch (error) {
+        console.log("❌ Error ejecutando seed:", error);
+      }
+    };
+
+    initializeSeed();
+  }, []);
 
   useEffect(() => {
     const prepare = async () => {
@@ -184,7 +213,7 @@ export default function App() {
 
   if (!isReady) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#A855F7" />
       </View>
     );
