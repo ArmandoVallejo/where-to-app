@@ -1,4 +1,3 @@
-// app.config.js
 const appJson = require('./app.json');
 require('dotenv').config();
 
