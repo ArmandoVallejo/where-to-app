@@ -12,11 +12,12 @@ import {
 import {
   PaperProvider,
   Drawer as PaperDrawer,
-  useTheme,
+  useTheme as usePaperTheme,
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
 import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
+import { ThemeProvider, useTheme } from "./context/ThemeContext";
 
 // 🔹 Pantallas
 import LoginScreen from "./screens/LoginScreen";
@@ -40,7 +41,8 @@ const Drawer = createDrawerNavigator();
 
 // 🔹 Drawer personalizado con Logout
 function CustomDrawerContent(props) {
-  const theme = useTheme();
+  const paperTheme = usePaperTheme();
+  const { theme } = useTheme();
   const { navigation } = props;
   const [active, setActive] = useState("Home");
 
@@ -74,8 +76,12 @@ function CustomDrawerContent(props) {
             <DrawerItem
               key={item.route}
               label={item.label}
-              icon={({ color, size }) => (
-                <Ionicons name={item.icon} size={size} color={color} />
+              icon={({ size }) => (
+                <Ionicons 
+                  name={item.icon} 
+                  size={size} 
+                  color={active === item.route ? theme.colors.secondary : theme.colors.textSecondary} 
+                />
               )}
               focused={active === item.route}
               onPress={() => {
@@ -88,6 +94,7 @@ function CustomDrawerContent(props) {
               }}
               labelStyle={{
                 fontSize: 16,
+                color: active === item.route ? theme.colors.secondary : theme.colors.text,
               }}
             />
           ))}
@@ -98,18 +105,18 @@ function CustomDrawerContent(props) {
       <PaperDrawer.Section
         style={{
           borderTopWidth: 1,
-          borderTopColor: theme.colors.surfaceVariant,
+          borderTopColor: paperTheme.colors.surfaceVariant,
           paddingTop: 8,
         }}
       >
         <DrawerItem
           label="Cerrar sesión"
           icon={({ size }) => (
-            <Ionicons name="log-out-outline" size={size} color="#DC2626" />
+            <Ionicons name="log-out-outline" size={size} color={theme.colors.error} />
           )}
           onPress={handleLogout}
           labelStyle={{
-            color: "#DC2626",
+            color: theme.colors.error,
             fontWeight: "bold",
           }}
         />
@@ -120,17 +127,20 @@ function CustomDrawerContent(props) {
 
 // 🔹 Drawer principal
 function DrawerNavigator() {
+  const { theme } = useTheme();
+  
   return (
     <Drawer.Navigator
       initialRouteName="Home"
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: "#A855F7" },
+        headerStyle: { backgroundColor: theme.colors.primary },
         headerTintColor: "#fff",
-        drawerActiveBackgroundColor: "#EDE9FE",
-        drawerActiveTintColor: "#6D28D9",
+        drawerActiveBackgroundColor: theme.colors.tertiary,
+        drawerActiveTintColor: theme.colors.secondary,
         drawerLabelStyle: { fontSize: 15, marginLeft: -10 },
+        drawerStyle: { backgroundColor: theme.colors.surface },
       }}
     >
       <Drawer.Screen
@@ -220,8 +230,19 @@ export default function App() {
   }
 
   return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+// Separate component to access theme context
+function AppContent() {
+  const { theme } = useTheme();
+
+  return (
     <GluestackUIProvider config={config}>
-      <PaperProvider>
+      <PaperProvider theme={theme}>
         <NavigationContainer>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Login" component={LoginScreen} />

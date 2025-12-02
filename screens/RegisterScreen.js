@@ -17,8 +17,10 @@ import { useNavigation } from "@react-navigation/native";
 import { ArrowLeft } from "lucide-react-native";
 import { ref, query, orderByChild, equalTo, get, push } from 'firebase/database';
 import { db } from '../config/config';
+import { useTheme } from "../context/ThemeContext";
 
 export default function RegisterScreen() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const [control, setControl] = useState("");
   const [email, setEmail] = useState("");

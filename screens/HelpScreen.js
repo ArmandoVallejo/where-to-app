@@ -10,8 +10,10 @@ import {
   Alert,
 } from "react-native";
 import { User, Mail, Phone, BookOpen, MapPin, Globe, Palette, HelpCircle, LogOut, Edit, X, Check, Eye, EyeOff, Lock } from 'lucide-react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export default function HelpScreen() {
+  const { theme } = useTheme();
   // Estados para el formulario de ayuda
   const [asunto, setAsunto] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -31,59 +33,59 @@ export default function HelpScreen() {
   };
 
   return (
-    <View style={styles.editContainer}>
+    <View style={[styles.editContainer, { backgroundColor: theme.colors.background }]}>
   
 
       <ScrollView style={styles.editForm}>
         <View style={styles.helpContent}>
           <View style={styles.helpIconContainer}>
-            <HelpCircle size={48} color="#16a34a" />
+            <HelpCircle size={48} color={theme.colors.success} />
           </View>
 
-          <Text style={styles.helpDescription}>
+          <Text style={[styles.helpDescription, { color: theme.colors.textSecondary }]}>
             ¿Necesitas ayuda? Envíanos un mensaje y nuestro equipo de soporte te
             responderá lo antes posible.
           </Text>
 
           <View style={styles.helpForm}>
-            <Text style={styles.inputLabel}>Asunto</Text>
+            <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>Asunto</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
               value={asunto}
               onChangeText={setAsunto}
               placeholder="Ej: Problema con mi cuenta"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={theme.colors.textSecondary}
             />
 
-            <Text style={styles.inputLabel}>Descripción</Text>
+            <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>Descripción</Text>
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
               value={descripcion}
               onChangeText={setDescripcion}
               placeholder="Describe tu problema o pregunta en detalle..."
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={theme.colors.textSecondary}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
             />
 
             <TouchableOpacity
-              style={styles.sendButton}
+              style={[styles.sendButton, { backgroundColor: theme.colors.success }]}
               onPress={handleSendHelp}
             >
               <Text style={styles.sendButtonText}>Enviar Mensaje</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.contactInfo}>
-            <Text style={styles.contactTitle}>Otras formas de contacto</Text>
+          <View style={[styles.contactInfo, { backgroundColor: theme.colors.surfaceVariant }]}>
+            <Text style={[styles.contactTitle, { color: theme.colors.text }]}>Otras formas de contacto</Text>
             <View style={styles.contactItem}>
-              <Mail size={20} color="#6b7280" />
-              <Text style={styles.contactText}>soporte@ejemplo.com</Text>
+              <Mail size={20} color={theme.colors.textSecondary} />
+              <Text style={[styles.contactText, { color: theme.colors.textSecondary }]}>soporte@ejemplo.com</Text>
             </View>
             <View style={styles.contactItem}>
-              <Phone size={20} color="#6b7280" />
-              <Text style={styles.contactText}>+52 449 123 4567</Text>
+              <Phone size={20} color={theme.colors.textSecondary} />
+              <Text style={[styles.contactText, { color: theme.colors.textSecondary }]}>+52 449 123 4567</Text>
             </View>
           </View>
         </View>

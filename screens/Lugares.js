@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from 'react-native-paper'; // ← 🔹 usamos botón Material
+import { useTheme } from '../context/ThemeContext';
 
 export default function Lugares({ navigation }) {
+  const { theme } = useTheme();
   const [lugares, setLugares] = useState([
     { id: 1, nombre: 'Sala Audiovisual', favorito: false, tipo: 'audiovisual' },
     { id: 2, nombre: 'Salón Cultural, Música, Baile', favorito: false, tipo: 'cultural' },
@@ -32,11 +34,11 @@ export default function Lugares({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.dark ? theme.colors.surface : '#EDE3F7' }]}>
         <Text style={styles.headerIcon}>📱</Text>
-        <Text style={styles.headerTitle}>Lugares</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>Lugares</Text>
       </View>
 
       {/* Lista de lugares */}
@@ -51,12 +53,13 @@ export default function Lugares({ navigation }) {
             <TouchableOpacity
               style={[
                 styles.lugarButton,
-                lugar.favorito && styles.lugarFavorito,
+                { backgroundColor: theme.colors.surface },
+                lugar.favorito && [styles.lugarFavorito, { backgroundColor: theme.dark ? theme.colors.surfaceVariant : '#FFF9E6' }],
               ]}
               onPress={() => navigation.navigate('Home', { tipo: lugar.tipo })}
             >
-              <View style={styles.circle} />
-              <Text style={styles.lugarText}>{lugar.nombre}</Text>
+              <View style={[styles.circle, { backgroundColor: theme.dark ? theme.colors.primary : '#D8C7F9' }]} />
+              <Text style={[styles.lugarText, { color: theme.colors.text }]}>{lugar.nombre}</Text>
             </TouchableOpacity>
 
             {/* Botón de favorito */}
@@ -64,7 +67,7 @@ export default function Lugares({ navigation }) {
               <MaterialCommunityIcons
                 name={lugar.favorito ? 'star' : 'star-outline'}
                 size={22}
-                color={lugar.favorito ? '#FFD700' : '#4A3B75'}
+                color={lugar.favorito ? '#FFD700' : theme.colors.primary}
               />
             </TouchableOpacity>
           </View>
@@ -78,8 +81,8 @@ export default function Lugares({ navigation }) {
           icon="map-marker"
           onPress={handleUbicacionActual}
           contentStyle={{ flexDirection: 'row-reverse' }} // icono a la izquierda
-          style={styles.locationButton}
-          labelStyle={styles.locationText}
+          style={[styles.locationButton, { backgroundColor: theme.dark ? theme.colors.surface : '#EDE3F7' }]}
+          labelStyle={[styles.locationText, { color: theme.colors.primary }]}
         >
           Ubicación actual
         </Button>
