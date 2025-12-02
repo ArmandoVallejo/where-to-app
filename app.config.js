@@ -20,10 +20,12 @@ module.exports = {
       ...(appJson.expo?.android || {}),
       package: "com.whereto.app", // ← ⚠ IMPORTANTE: sin mayúsculas
     },
-
+ios: {
+    bundleIdentifier: "com.whereto.app",
+  },
     extra: {
       ...((appJson.expo && appJson.expo.extra) ? appJson.expo.extra : {}),
-      ...env,
+      ...env
     },
   },
 };

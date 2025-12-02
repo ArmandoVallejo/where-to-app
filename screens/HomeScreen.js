@@ -33,6 +33,7 @@ import {
 import { DatePickerInput, TimePickerModal } from "react-native-paper-dates";
 
 import { db } from "../config/config";
+import { useTheme } from "../context/ThemeContext";
 import { ref, onValue } from "firebase/database";
 
 import { BleManager } from "react-native-ble-plx";
@@ -217,6 +218,7 @@ const CATEGORIES = [
 
 export default function HomeScreen({ navigation }) {
   //
+  const { theme } = useTheme();
   const [buildings, setBuildings] = useState([]);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -490,7 +492,7 @@ export default function HomeScreen({ navigation }) {
   // };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/*  */}
       <Portal>
         <Dialog
@@ -522,12 +524,12 @@ export default function HomeScreen({ navigation }) {
       {/*  */}
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
         {/* Título */}
         <View style={styles.headerLeft}>
           <View style={styles.headerTitle}>
-            <Text style={styles.headerMainText}>Eventos /</Text>
-            <Text style={styles.headerSubText}>Salones</Text>
+            <Text style={[styles.headerMainText, { color: theme.colors.onPrimary }]}>Eventos /</Text>
+            <Text style={[styles.headerSubText, { color: theme.colors.onPrimary }]}>Salones</Text>
           </View>
         </View>
 
@@ -536,7 +538,7 @@ export default function HomeScreen({ navigation }) {
           onPress={() => setAdmin(!admin)}
           style={{ marginLeft: 15 }}
         >
-          <Text style={styles.adminButtonText}>
+          <Text style={[styles.adminButtonText, { color: theme.colors.onPrimary }]}>
             {admin ? "Salir Admin" : "Entrar Admin"}
           </Text>
         </TouchableOpacity>
@@ -574,7 +576,7 @@ export default function HomeScreen({ navigation }) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.chipsScrollView}
+        style={[styles.chipsScrollView, { backgroundColor: theme.colors.background }]}
         contentContainerStyle={styles.chipsContainer}
       >
         {CATEGORIES.map((category) => (
@@ -584,11 +586,14 @@ export default function HomeScreen({ navigation }) {
             onPress={() => setSelectedCategory(category)}
             style={[
               styles.chip,
-              selectedCategory === category && styles.chipSelected,
+              { 
+                backgroundColor: selectedCategory === category ? theme.colors.primary : theme.colors.surface,
+                borderColor: theme.colors.border
+              }
             ]}
             textStyle={[
               styles.chipText,
-              selectedCategory === category && styles.chipTextSelected,
+              { color: selectedCategory === category ? theme.colors.onPrimary : theme.colors.text }
             ]}
             mode="outlined"
           >
@@ -625,8 +630,8 @@ export default function HomeScreen({ navigation }) {
                 labelStyle={styles.eventIcon}
               />
               <View style={styles.eventHeaderText}>
-                <Text style={styles.eventTitle}>{event.title}</Text>
-                <Text style={styles.eventDate}>
+                <Text style={[styles.eventTitle, { color: theme.colors.text }]}>{event.title}</Text>
+                <Text style={[styles.eventDate, { color: theme.colors.textSecondary }]}>
                   {event.isToday ? "Hoy" : event.date}
                 </Text>
               </View>
@@ -647,8 +652,8 @@ export default function HomeScreen({ navigation }) {
             <Card.Content style={styles.cardContent}>
               <View style={styles.eventFooter}>
                 <View style={styles.eventInfo}>
-                  <Text style={styles.eventTitleBold}>{event.title}</Text>
-                  <Text style={styles.eventLocation}>{event.location}</Text>
+                  <Text style={[styles.eventTitleBold, { color: theme.colors.text }]}>{event.title}</Text>
+                  <Text style={[styles.eventLocation, { color: theme.colors.textSecondary }]}>{event.location}</Text>
                 </View>
                 <View style={styles.participantsContainer}>
                   <Ionicons name="people" size={16} color="#666" />
@@ -659,7 +664,7 @@ export default function HomeScreen({ navigation }) {
               </View>
 
               {event.description && (
-                <Text style={styles.eventDescription} numberOfLines={3}>
+                <Text style={[styles.eventDescription, { color: theme.colors.textSecondary }]} numberOfLines={3}>
                   {event.description}
                 </Text>
               )}
@@ -757,25 +762,25 @@ export default function HomeScreen({ navigation }) {
       />
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate("Perfil")}
         >
-          <Ionicons name="person-outline" size={24} color="#666" />
-          <Text style={styles.navText}>Perfil</Text>
+          <Ionicons name="person-outline" size={24} color={theme.colors.textSecondary} />
+          <Text style={[styles.navText, { color: theme.colors.textSecondary }]}>Perfil</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <Ionicons name="home" size={24} color="#000" />
-          <Text style={[styles.navText, styles.navTextActive]}>Inicio</Text>
-          <View style={styles.activeIndicator} />
+          <Ionicons name="home" size={24} color={theme.colors.text} />
+          <Text style={[styles.navText, styles.navTextActive, { color: theme.colors.text }]}>Inicio</Text>
+          <View style={[styles.activeIndicator, { backgroundColor: theme.colors.primary }]} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate("History")}
         >
-          <Ionicons name="calendar-outline" size={24} color="#666" />
-          <Text style={styles.navText}>Eventos</Text>
+          <Ionicons name="calendar-outline" size={24} color={theme.colors.textSecondary} />
+          <Text style={[styles.navText, { color: theme.colors.textSecondary }]}>Eventos</Text>
         </TouchableOpacity>
       </View>
 
@@ -789,12 +794,12 @@ export default function HomeScreen({ navigation }) {
         >
           <Pressable style={styles.modalOverlay} onPress={closeModal}>
             <Pressable
-              style={styles.modalContent}
+              style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}
               onPress={(e) => e.stopPropagation()}
             >
               {selectedEvent && (
                 <>
-                  <Surface style={styles.modalHeader} elevation={0}>
+                  <Surface style={[styles.modalHeader, { backgroundColor: theme.colors.surface }]} elevation={0}>
                     <Avatar.Text
                       size={48}
                       label={selectedEvent.title.charAt(0).toUpperCase()}
@@ -802,10 +807,10 @@ export default function HomeScreen({ navigation }) {
                       labelStyle={styles.modalIcon}
                     />
                     <View style={styles.modalHeaderText}>
-                      <Text style={styles.modalTitle}>
+                      <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
                         {selectedEvent.title}
                       </Text>
-                      <Text style={styles.modalSubtitle}>
+                      <Text style={[styles.modalSubtitle, { color: theme.colors.textSecondary }]}>
                         {selectedEvent.date} {selectedEvent.time}
                       </Text>
                     </View>
@@ -843,40 +848,40 @@ export default function HomeScreen({ navigation }) {
 
                   <ScrollView style={styles.modalDetails}>
                     {selectedEvent.professor && (
-                      <Text style={styles.modalProfessor}>
+                      <Text style={[styles.modalProfessor, { color: theme.colors.text }]}>
                         {selectedEvent.professor}
                       </Text>
                     )}
 
                     <View style={styles.modalInfoRow}>
-                      <Ionicons name="calendar" size={20} color="#666" />
-                      <Text style={styles.modalInfoText}>
+                      <Ionicons name="calendar" size={20} color={theme.colors.textSecondary} />
+                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
                         {selectedEvent.date}
                       </Text>
                     </View>
 
                     <View style={styles.modalInfoRow}>
-                      <Ionicons name="time" size={20} color="#666" />
-                      <Text style={styles.modalInfoText}>
+                      <Ionicons name="time" size={20} color={theme.colors.textSecondary} />
+                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
                         {selectedEvent.time}
                       </Text>
                     </View>
 
                     <View style={styles.modalInfoRow}>
-                      <Ionicons name="people" size={20} color="#666" />
-                      <Text style={styles.modalInfoText}>
+                      <Ionicons name="people" size={20} color={theme.colors.textSecondary} />
+                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
                         {selectedEvent.participants}
                       </Text>
                     </View>
 
                     <View style={styles.modalInfoRow}>
-                      <Ionicons name="location" size={20} color="#666" />
-                      <Text style={styles.modalInfoText}>
+                      <Ionicons name="location" size={20} color={theme.colors.textSecondary} />
+                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
                         {selectedEvent.location}
                       </Text>
                     </View>
 
-                    <Text style={styles.modalDescription}>
+                    <Text style={[styles.modalDescription, { color: theme.colors.textSecondary }]}>
                       {selectedEvent.description}
                     </Text>
                   </ScrollView>
@@ -1005,10 +1010,10 @@ export default function HomeScreen({ navigation }) {
         <Modal
           visible={newEventModalVisible}
           onDismiss={onDismissNewEventModal}
-          contentContainerStyle={styles.modalContainer}
+          contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.colors.surface }]}
         >
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.title}>Nuevo evento</Text>
+            <Text style={[styles.title, { color: theme.colors.text }]}>Nuevo evento</Text>
             <Divider style={styles.divider} />
 
             {/* Nombre */}

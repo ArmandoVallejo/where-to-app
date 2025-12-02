@@ -16,8 +16,10 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { ref, query, orderByChild, equalTo, get } from 'firebase/database';
 import { db } from "../config/config";
+import { useTheme } from "../context/ThemeContext";
 
 export default function LoginScreen() {
+  const { theme } = useTheme();
   const navigation = useNavigation();
   const [control, setControl] = useState("");
   const [password, setPassword] = useState("");
