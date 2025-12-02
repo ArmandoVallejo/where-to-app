@@ -14,9 +14,11 @@ import {
   Card,
 } from '@gluestack-ui/themed';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 export default function LoginScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [control, setControl] = useState('');
   const [password, setPassword] = useState('');
 
@@ -41,33 +43,33 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (!control.trim() || !password.trim()) {
-      Alert.alert('Error', 'Por favor llena todos los campos');
+      Alert.alert(t('login.error'), t('login.fill_fields'));
       return;
     }
 
     if (!validateControlNumber(control)) {
       Alert.alert(
-        'Error',
-        'El número de control debe tener 8-9 caracteres y puede comenzar con "C"'
+        t('login.error'),
+        t('login.invalid_control')
       );
       return;
     }
 
     if (!validatePassword(password)) {
       Alert.alert(
-        'Error',
-        'La contraseña debe contener al menos una mayúscula, una minúscula y un carácter especial'
+        t('login.error'),
+        t('login.invalid_password')
       );
       return;
     }
 
     // Validación de credenciales simuladas
     if (control === validUser.control && password === validUser.password) {
-      Alert.alert('Bienvenido', 'Inicio de sesión exitoso', [
+      Alert.alert(t('login.welcome'), t('login.login_success'), [
         { text: 'OK', onPress: () => navigation.navigate('Main') },
       ]);
     } else {
-      Alert.alert('Error', 'Credenciales incorrectas');
+      Alert.alert(t('login.error'), t('login.invalid_credentials'));
     }
   };
 
@@ -76,7 +78,7 @@ export default function LoginScreen() {
       {/* Imagen superior */}
       <Box alignItems="center" mb="$4">
         <Image
-          source={require('../assets/avatar.png')} 
+          source={require('../assets/avatar.png')}
           style={{
             width: 150,
             height: 150,
@@ -88,7 +90,7 @@ export default function LoginScreen() {
       {/* Texto Welcome */}
       <Box mb="$5">
         <Heading size="lg" textAlign="center">
-          Welcome
+          {t('login.welcome')}
         </Heading>
       </Box>
 
@@ -106,11 +108,11 @@ export default function LoginScreen() {
           {/* Campo No. Control */}
           <Box>
             <Text mb="$2" color="$black">
-              No. Control
+              {t('login.control_number')}
             </Text>
             <Input borderColor="$gray300" borderRadius="$md">
               <InputField
-                placeholder="Value"
+                placeholder={t('login.placeholder')}
                 value={control}
                 onChangeText={setControl}
                 autoCapitalize="none"
@@ -121,11 +123,11 @@ export default function LoginScreen() {
           {/* Campo Password */}
           <Box>
             <Text mb="$2" color="$black">
-              Password
+              {t('login.password')}
             </Text>
             <Input borderColor="$gray300" borderRadius="$md">
               <InputField
-                placeholder="Value"
+                placeholder={t('login.placeholder')}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -135,16 +137,16 @@ export default function LoginScreen() {
 
           {/* Botón Sign In */}
           <Button bg="$purple600" borderRadius="$md" mt="$2" onPress={handleLogin}>
-            <ButtonText color="$white">Sign In</ButtonText>
+            <ButtonText color="$white">{t('login.sign_in')}</ButtonText>
           </Button>
 
           {/* Texto Create one */}
           <Center>
             <Text color="$black">
-              Don´t have an account yet?{' '}
+              {t('login.no_account')}{' '}
               <Pressable onPress={() => navigation.navigate('Register')}>
                 <Text color="$purple600" bold>
-                  Create one
+                  {t('login.create_one')}
                 </Text>
               </Pressable>
             </Text>

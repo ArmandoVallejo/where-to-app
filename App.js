@@ -19,6 +19,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { GluestackUIProvider } from '@gluestack-ui/themed';
 import { config } from '@gluestack-ui/config';
+import { useTranslation } from 'react-i18next';
+
+import i18n from './i18n';
 
 // 🔹 Pantallas
 import LoginScreen from './screens/LoginScreen';
@@ -41,15 +44,16 @@ const Drawer = createDrawerNavigator();
 // 🔹 Drawer personalizado con Logout
 function CustomDrawerContent(props) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const { navigation } = props;
   const [active, setActive] = useState('Home');
 
   const menuItems = [
-    { label: 'Inicio', icon: 'home-outline', route: 'Home' },
-    { label: 'Perfil', icon: 'person-outline', route: 'Perfil' },
+    { label: t('sidebar.home'), icon: 'home-outline', route: 'Home' },
+    { label: t('sidebar.profile'), icon: 'person-outline', route: 'Perfil' },
     // { label: 'Eventos', icon: 'calendar-outline', route: 'Eventos' },
-    { label: 'Lugares', icon: 'location-outline', route: 'Lugares' },
-    { label: 'Historial', icon: 'time-outline', route: 'History' },
+    { label: t('sidebar.places'), icon: 'location-outline', route: 'Lugares' },
+    { label: t('sidebar.history'), icon: 'time-outline', route: 'History' },
     // { label: 'Escanear QR', icon: 'qr-code-outline', route: 'QRScanner' },
   ];
 
@@ -61,6 +65,11 @@ function CustomDrawerContent(props) {
     });
   };
 
+  const handleLanguageChange = () => {
+    const newLanguage = i18n.language === 'es' ? 'en' : 'es';
+    i18n.changeLanguage(newLanguage);
+  };
+
   return (
     <DrawerContentScrollView
       {...props}
@@ -68,7 +77,7 @@ function CustomDrawerContent(props) {
     >
       {/* 🔹 Sección principal */}
       <View>
-        <PaperDrawer.Section title="Menú principal">
+        <PaperDrawer.Section title={t('sidebar.main_menu')}>
           {menuItems.map((item) => (
             <DrawerItem
               key={item.route}
@@ -93,7 +102,7 @@ function CustomDrawerContent(props) {
         </PaperDrawer.Section>
       </View>
 
-      {/* 🔹 Sección inferior: Logout */}
+      {/* 🔹 Sección inferior: Cambiar idioma y Logout */}
       <PaperDrawer.Section
         style={{
           borderTopWidth: 1,
@@ -102,7 +111,18 @@ function CustomDrawerContent(props) {
         }}
       >
         <DrawerItem
-          label="Cerrar sesión"
+          label={t('sidebar.change_language')}
+          icon={({ size }) => (
+            <Ionicons name="language-outline" size={size} color="#7C3AED" />
+          )}
+          onPress={handleLanguageChange}
+          labelStyle={{
+            color: '#7C3AED',
+            fontWeight: '600',
+          }}
+        />
+        <DrawerItem
+          label={t('sidebar.logout')}
           icon={({ size }) => (
             <Ionicons name="log-out-outline" size={size} color="#DC2626" />
           )}
@@ -120,6 +140,8 @@ function CustomDrawerContent(props) {
 
 // 🔹 Drawer principal
 function DrawerNavigator() {
+  const { t } = useTranslation();
+
   return (
     <Drawer.Navigator
       initialRouteName="Home"
@@ -133,15 +155,15 @@ function DrawerNavigator() {
         drawerLabelStyle: { fontSize: 15, marginLeft: -10 },
       }}
     >
-      <Drawer.Screen name="Home" component={HomeScreen} options={{ title: 'Inicio' }} />
-      <Drawer.Screen name="Perfil" component={ProfileScreen} />
+      <Drawer.Screen name="Home" component={HomeScreen} options={{ title: t('sidebar.home') }} />
+      <Drawer.Screen name="Perfil" component={ProfileScreen} options={{ title: t('sidebar.profile') }} />
       {/* <Drawer.Screen name="Eventos" component={MaterialDesignScreen} /> */}
-      <Drawer.Screen name="Lugares" component={Lugares} />
+      <Drawer.Screen name="Lugares" component={Lugares} options={{ title: t('sidebar.places') }} />
       <Drawer.Screen
         name="History"
         component={HistoryScreen}
         options={{
-          title: 'Historial de eventos',
+          title: t('history.title'),
 
         }}
       />
@@ -156,7 +178,7 @@ function DrawerNavigator() {
       <Drawer.Screen
         name="Participants"
         component={ParticipantsScreen}
-        options={{ title: 'Participantes' }}
+        options={{ title: t('participants.title') }}
       />
     </Drawer.Navigator>
   );

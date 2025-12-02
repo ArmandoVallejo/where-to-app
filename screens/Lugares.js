@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Button } from 'react-native-paper'; // ← 🔹 usamos botón Material
+import { Button } from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
 
 export default function Lugares({ navigation }) {
+  const { t } = useTranslation();
   const [lugares, setLugares] = useState([
-    { id: 1, nombre: 'Sala Audiovisual', favorito: false, tipo: 'audiovisual' },
-    { id: 2, nombre: 'Salón Cultural, Música, Baile', favorito: false, tipo: 'cultural' },
-    { id: 3, nombre: 'Unidad de Posgrado e Investigación', favorito: false, tipo: 'posgrado' },
-    { id: 4, nombre: 'Centro de Idiomas', favorito: false, tipo: 'idiomas' },
-    { id: 5, nombre: 'Departamento de Ciencias Básicas', favorito: false, tipo: 'basicas' },
-    { id: 6, nombre: 'Gimnasio Auditorio', favorito: false, tipo: 'auditorio' },
-    { id: 7, nombre: 'Alberca Semiolímpica', favorito: false, tipo: 'alberca' },
-    { id: 8, nombre: 'Campo de Futbol, Pista de Atletismo', favorito: false, tipo: 'futbol' },
-    { id: 9, nombre: 'Campo de Beisbol', favorito: false, tipo: 'beisbol' },
-    { id: 10, nombre: 'Departamento de Sistemas Computacionales', favorito: false, tipo: 'sistemas' },
+    { id: 1, nombre: t('places.audiovisual_room'), favorito: false, tipo: 'audiovisual' },
+    { id: 2, nombre: t('places.cultural_hall'), favorito: false, tipo: 'cultural' },
+    { id: 3, nombre: t('places.postgrad_unit'), favorito: false, tipo: 'posgrado' },
+    { id: 4, nombre: t('places.language_center'), favorito: false, tipo: 'idiomas' },
+    { id: 5, nombre: t('places.basic_sciences'), favorito: false, tipo: 'basicas' },
+    { id: 6, nombre: t('places.auditorium_gym'), favorito: false, tipo: 'auditorio' },
+    { id: 7, nombre: t('places.pool'), favorito: false, tipo: 'alberca' },
+    { id: 8, nombre: t('places.soccer_field'), favorito: false, tipo: 'futbol' },
+    { id: 9, nombre: t('places.baseball_field'), favorito: false, tipo: 'beisbol' },
+    { id: 10, nombre: t('places.computer_systems'), favorito: false, tipo: 'sistemas' },
   ]);
 
   const toggleFavorito = (id) => {
@@ -36,7 +38,7 @@ export default function Lugares({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerIcon}>📱</Text>
-        <Text style={styles.headerTitle}>Lugares</Text>
+        <Text style={styles.headerTitle}>{t('places.title')}</Text>
       </View>
 
       {/* Lista de lugares */}
@@ -81,7 +83,7 @@ export default function Lugares({ navigation }) {
           style={styles.locationButton}
           labelStyle={styles.locationText}
         >
-          Ubicación actual
+          {t('places.current_location')}
         </Button>
       </View>
     </View>

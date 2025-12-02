@@ -1,16 +1,17 @@
 import React from "react";
 import { View, StyleSheet, FlatList, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { 
-  List, 
-  Avatar, 
-  Text, 
+import {
+  List,
+  Avatar,
+  Text,
   Divider,
   Card,
   Surface,
   IconButton
 } from "react-native-paper";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from 'react-i18next';
 
 const participants = [
   { id: "1", name: "Juan Pérez", controlNumber: "21100123", semester: "6°" },
@@ -21,7 +22,8 @@ const participants = [
 ];
 
 export default function ParticipantsScreen({ navigation, route }) {
-  const { eventName = "Evento" } = route?.params || {};
+  const { t } = useTranslation();
+  const { eventName = t('participants.event') } = route?.params || {};
 
   const renderItem = ({ item }) => (
     <Card style={styles.card} mode="elevated">
@@ -45,7 +47,7 @@ export default function ParticipantsScreen({ navigation, route }) {
           <View style={styles.infoRow}>
             <Ionicons name="school-outline" size={16} color="#666" />
             <Text variant="bodyMedium" style={styles.infoText}>
-              Semestre {item.semester}
+              {t('participants.semester')} {item.semester}
             </Text>
           </View>
         </View>
@@ -57,7 +59,7 @@ export default function ParticipantsScreen({ navigation, route }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      
+
       {/* Header */}
       <Surface style={styles.header} elevation={1}>
         <IconButton
@@ -68,7 +70,7 @@ export default function ParticipantsScreen({ navigation, route }) {
         />
         <View style={styles.headerContent}>
           <Text variant="titleLarge" style={styles.headerTitle}>
-            Participantes
+            {t('participants.title')}
           </Text>
           <Text variant="bodyMedium" style={styles.headerSubtitle}>
             {eventName}

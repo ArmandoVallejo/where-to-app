@@ -15,9 +15,11 @@ import {
 } from '@gluestack-ui/themed';
 import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 export default function RegisterScreen() {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [control, setControl] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,16 +27,16 @@ export default function RegisterScreen() {
 
   const handleRegister = () => {
     if (!control.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
-      Alert.alert('Error', 'Por favor llena todos los campos');
+      Alert.alert(t('register.error'), t('register.fill_fields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden');
+      Alert.alert(t('register.error'), t('register.passwords_mismatch'));
       return;
     }
 
-    Alert.alert('Registro exitoso', 'Tu cuenta ha sido creada', [
+    Alert.alert(t('register.success_title'), t('register.success_message'), [
       { text: 'OK', onPress: () => navigation.replace('Main') },
     ]);
   };
@@ -65,7 +67,7 @@ export default function RegisterScreen() {
       {/* Texto Registro */}
       <Box mb="$5">
         <Heading size="lg" textAlign="center">
-          REGISTRO
+          {t('register.title')}
         </Heading>
       </Box>
 
@@ -83,11 +85,11 @@ export default function RegisterScreen() {
           {/* Campo No. Control */}
           <Box>
             <Text mb="$2" color="$black">
-              No. Control
+              {t('register.control_number')}
             </Text>
             <Input borderColor="$gray300" borderRadius="$md">
               <InputField
-                placeholder="Value"
+                placeholder={t('register.placeholder')}
                 value={control}
                 onChangeText={setControl}
                 autoCapitalize="none"
@@ -98,11 +100,11 @@ export default function RegisterScreen() {
           {/* Campo Email */}
           <Box>
             <Text mb="$2" color="$black">
-              Email
+              {t('register.email')}
             </Text>
             <Input borderColor="$gray300" borderRadius="$md">
               <InputField
-                placeholder="Value"
+                placeholder={t('register.placeholder')}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -114,11 +116,11 @@ export default function RegisterScreen() {
           {/* Campo Password */}
           <Box>
             <Text mb="$2" color="$black">
-              Password
+              {t('register.password')}
             </Text>
             <Input borderColor="$gray300" borderRadius="$md">
               <InputField
-                placeholder="Value"
+                placeholder={t('register.placeholder')}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -129,11 +131,11 @@ export default function RegisterScreen() {
           {/* Campo Confirm Password */}
           <Box>
             <Text mb="$2" color="$black">
-              Confirm Password
+              {t('register.confirm_password')}
             </Text>
             <Input borderColor="$gray300" borderRadius="$md">
               <InputField
-                placeholder="Value"
+                placeholder={t('register.placeholder')}
                 secureTextEntry
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -143,7 +145,7 @@ export default function RegisterScreen() {
 
           {/* Botón Register */}
           <Button bg="$purple600" borderRadius="$md" mt="$2" onPress={handleRegister}>
-            <ButtonText color="$white">Register</ButtonText>
+            <ButtonText color="$white">{t('register.register_button')}</ButtonText>
           </Button>
         </VStack>
       </Card>

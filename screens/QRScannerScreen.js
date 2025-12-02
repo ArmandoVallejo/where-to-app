@@ -13,15 +13,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Surface, IconButton, Button } from "react-native-paper";
 import { CameraView, Camera } from "expo-camera";
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get("window");
 
 export default function QRScannerScreen({ navigation, route }) {
+  const { t } = useTranslation();
   const [hasPermission, setHasPermission] = useState(null);
   const [flashOn, setFlashOn] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [scanning, setScanning] = useState(true);
-  const eventTitle = route?.params?.eventTitle || "Evento";
+  const eventTitle = route?.params?.eventTitle || t('qr_scanner.event');
   const cameraRef = useRef(null);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export default function QRScannerScreen({ navigation, route }) {
       setHasPermission(status === "granted");
     } catch (error) {
       console.error("Error requesting camera permission:", error);
-      Alert.alert("Error", "No se pudo solicitar permiso de cámara");
+      Alert.alert(t('qr_scanner.error'), t('qr_scanner.camera_error'));
     }
   };
 
@@ -44,31 +46,31 @@ export default function QRScannerScreen({ navigation, route }) {
 
   const handleBarCodeScanned = ({ type, data }) => {
     if (!scanning || scanned) return;
-    
+
     setScanned(true);
     setScanning(false);
 
     Alert.alert(
-      "¡Código QR Escaneado!",
-      `Tipo: ${type}\nDatos: ${data}\nEvento: ${eventTitle}`,
+      t('qr_scanner.qr_scanned'),
+      `${t('qr_scanner.type')}: ${type}\n${t('qr_scanner.data')}: ${data}\n${t('qr_scanner.event')}: ${eventTitle}`,
       [
         {
-          text: "Escanear otro",
+          text: t('qr_scanner.scan_another'),
           onPress: () => {
             setScanned(false);
             setScanning(true);
           },
         },
         {
-          text: "Confirmar asistencia",
+          text: t('qr_scanner.confirm_attendance'),
           onPress: () => {
             // Here you would typically call an API to register attendance
             Alert.alert(
-              "Asistencia registrada",
-              `Tu asistencia al evento "${eventTitle}" ha sido confirmada.`,
+              t('qr_scanner.attendance_registered'),
+              t('qr_scanner.attendance_confirmed').replace('{eventTitle}', eventTitle),
               [
                 {
-                  text: "OK",
+                  text: t('qr_scanner.ok'),
                   onPress: () => navigation.goBack(),
                 },
               ]
@@ -81,23 +83,23 @@ export default function QRScannerScreen({ navigation, route }) {
 
   const handleManualEntry = () => {
     Alert.prompt(
-      "Ingresar código manualmente",
-      "Ingresa el código del evento:",
+      t('qr_scanner.manual_entry'),
+      t('qr_scanner.enter_code'),
       [
         {
-          text: "Cancelar",
+          text: t('qr_scanner.cancel'),
           style: "cancel",
         },
         {
-          text: "Confirmar",
+          text: t('qr_scanner.confirm'),
           onPress: (code) => {
             if (code && code.trim()) {
               Alert.alert(
-                "Código ingresado",
-                `Código: ${code}\nEvento: ${eventTitle}`,
+                t('qr_scanner.code_entered'),
+                `${t('qr_scanner.code')}: ${code}\n${t('qr_scanner.event')}: ${eventTitle}`,
                 [
                   {
-                    text: "OK",
+                    text: t('qr_scanner.ok'),
                     onPress: () => navigation.goBack(),
                   },
                 ]
@@ -115,7 +117,7 @@ export default function QRScannerScreen({ navigation, route }) {
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color="#6B46C1" />
-          <Text style={styles.loadingText}>Solicitando permiso de cámara...</Text>
+          <Text style={styles.loadingText}>{t('qr_scanner.requesting_permission')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -125,7 +127,7 @@ export default function QRScannerScreen({ navigation, route }) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="light-content" backgroundColor="#000" />
-        
+
         <Surface style={styles.header} elevation={0}>
           <IconButton
             icon="arrow-left"
@@ -133,16 +135,15 @@ export default function QRScannerScreen({ navigation, route }) {
             iconColor="#fff"
             onPress={() => navigation.goBack()}
           />
-          <Text style={styles.headerTitle}>Escanear QR</Text>
+          <Text style={styles.headerTitle}>{t('qr_scanner.title')}</Text>
           <View style={{ width: 48 }} />
         </Surface>
 
         <View style={styles.centerContent}>
           <Ionicons name="camera-off" size={80} color="#666" />
-          <Text style={styles.errorTitle}>Permiso de cámara denegado</Text>
+          <Text style={styles.errorTitle}>{t('qr_scanner.permission_denied')}</Text>
           <Text style={styles.errorText}>
-            Para escanear códigos QR, necesitas habilitar el permiso de cámara en la
-            configuración de tu dispositivo.
+            {t('qr_scanner.permission_needed')}
           </Text>
           <Button
             mode="contained"
@@ -150,7 +151,7 @@ export default function QRScannerScreen({ navigation, route }) {
             style={styles.retryButton}
             buttonColor="#6B46C1"
           >
-            Solicitar permiso nuevamente
+            {t('qr_scanner.request_again')}
           </Button>
         </View>
       </SafeAreaView>
@@ -169,7 +170,7 @@ export default function QRScannerScreen({ navigation, route }) {
           iconColor="#fff"
           onPress={() => navigation.goBack()}
         />
-        <Text style={styles.headerTitle}>Escanear QR</Text>
+        <Text style={styles.headerTitle}>{t('qr_scanner.title')}</Text>
         {/* <IconButton
           icon={flashOn ? "flash" : "flash-off"}
           size={24}
@@ -218,10 +219,10 @@ export default function QRScannerScreen({ navigation, route }) {
           <View style={styles.overlayBottom}>
             <Text style={styles.instructionText}>
               {scanning
-                ? "Coloca el código QR dentro del marco"
-                : "Código detectado"}
+                ? t('qr_scanner.place_qr')
+                : t('qr_scanner.code_detected')}
             </Text>
-            <Text style={styles.eventText}>Evento: {eventTitle}</Text>
+            <Text style={styles.eventText}>{t('qr_scanner.event')}: {eventTitle}</Text>
           </View>
         </View>
       </View>

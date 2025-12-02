@@ -10,21 +10,23 @@ import {
   Alert,
 } from 'react-native';
 import { User, Mail, Phone, BookOpen, MapPin, Globe, Palette, HelpCircle, LogOut, Edit, X, Check, Eye, EyeOff, Lock } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 export default function ProfileScreen() {
+  const { t, i18n } = useTranslation();
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [helpModalVisible, setHelpModalVisible] = useState(false);
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
-  
-  const [selectedLanguage, setSelectedLanguage] = useState('Español');
-  const [selectedTheme, setSelectedTheme] = useState('Claro');
-  
+
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language === 'es' ? 'Español' : 'English');
+  const [selectedTheme, setSelectedTheme] = useState(t('profile.light'));
+
   // Estados para el formulario de ayuda
   const [asunto, setAsunto] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  
+
   // Estados para cambio de contraseña
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -32,7 +34,7 @@ export default function ProfileScreen() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Estados para editar perfil
   const [nombre, setNombre] = useState('Juan Pérez García');
   const [email, setEmail] = useState('juan.perez@ejemplo.com');
@@ -42,20 +44,20 @@ export default function ProfileScreen() {
   const [ubicacion, setUbicacion] = useState('Aguascalientes, México');
 
   const languages = ['Español', 'English', 'Français', 'Deutsch', 'Português'];
-  const themes = ['Claro', 'Oscuro', 'Automático'];
+  const themes = [t('profile.light'), t('profile.dark'), t('profile.automatic')];
 
   const handleSaveProfile = () => {
-    Alert.alert('Éxito', 'Perfil actualizado correctamente');
+    Alert.alert(t('profile.success'), t('profile.profile_updated'));
     setEditModalVisible(false);
   };
 
   const handleSendHelp = () => {
     if (!asunto.trim() || !descripcion.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      Alert.alert(t('profile.error'), t('profile.fill_fields'));
       return;
     }
-    
-    Alert.alert('Éxito', 'Tu mensaje ha sido enviado. Nos pondremos en contacto contigo pronto.');
+
+    Alert.alert(t('profile.success'), t('profile.message_sent'));
     setAsunto('');
     setDescripcion('');
     setHelpModalVisible(false);
@@ -63,21 +65,21 @@ export default function ProfileScreen() {
 
   const handleChangePassword = () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      Alert.alert(t('profile.error'), t('profile.fill_fields'));
       return;
     }
-    
+
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'La nueva contraseña debe tener al menos 6 caracteres');
+      Alert.alert(t('profile.error'), t('profile.password_min_length'));
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden');
+      Alert.alert(t('profile.error'), t('profile.passwords_mismatch'));
       return;
     }
-    
-    Alert.alert('Éxito', 'Contraseña cambiada exitosamente');
+
+    Alert.alert(t('profile.success'), t('profile.password_changed'));
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
@@ -86,11 +88,11 @@ export default function ProfileScreen() {
 
   const handleLogout = () => {
     Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro de que deseas cerrar sesión?',
+      t('profile.logout_title'),
+      t('profile.logout_message'),
       [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Cerrar Sesión', onPress: () => console.log('Logout') },
+        { text: t('profile.cancel'), style: 'cancel' },
+        { text: t('profile.logout'), onPress: () => console.log('Logout') },
       ]
     );
   };
@@ -100,7 +102,7 @@ export default function ProfileScreen() {
       <ScrollView style={styles.container}>
         {/* Header con botón de editar */}
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.editButton}
             onPress={() => setEditModalVisible(true)}
           >
@@ -137,23 +139,23 @@ export default function ProfileScreen() {
           <View style={styles.dataRow}>
             <BookOpen size={20} color="#3b82f6" />
             <View style={styles.dataContent}>
-              <Text style={styles.label}>NO. CONTROL</Text>
+              <Text style={styles.label}>{t('profile.control_number').toUpperCase()}</Text>
               <Text style={styles.value}>{noControl}</Text>
             </View>
           </View>
-          
+
           <View style={styles.dataRow}>
             <BookOpen size={20} color="#3b82f6" />
             <View style={styles.dataContent}>
-              <Text style={styles.label}>CARRERA</Text>
+              <Text style={styles.label}>{t('profile.career').toUpperCase()}</Text>
               <Text style={styles.value}>{carrera}</Text>
             </View>
           </View>
-          
+
           <View style={styles.dataRow}>
             <MapPin size={20} color="#3b82f6" />
             <View style={styles.dataContent}>
-              <Text style={styles.label}>UBICACIÓN</Text>
+              <Text style={styles.label}>{t('profile.location').toUpperCase()}</Text>
               <Text style={styles.value}>{ubicacion}</Text>
             </View>
           </View>
@@ -163,7 +165,7 @@ export default function ProfileScreen() {
 
         {/* Opciones de configuración */}
         <View style={styles.section}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={() => setLanguageModalVisible(true)}
           >
@@ -171,13 +173,13 @@ export default function ProfileScreen() {
               <Globe size={24} color="#3b82f6" />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={styles.menuText}>Idiomas</Text>
+              <Text style={styles.menuText}>{t('profile.language')}</Text>
               <Text style={styles.menuSubtext}>{selectedLanguage}</Text>
             </View>
             <Text style={styles.arrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={() => setThemeModalVisible(true)}
           >
@@ -185,7 +187,7 @@ export default function ProfileScreen() {
               <Palette size={24} color="#9333ea" />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={styles.menuText}>Tema</Text>
+              <Text style={styles.menuText}>{t('profile.theme')}</Text>
               <Text style={styles.menuSubtext}>{selectedTheme}</Text>
             </View>
             <Text style={styles.arrow}>›</Text>
@@ -196,25 +198,25 @@ export default function ProfileScreen() {
 
         {/* Opciones finales */}
         <View style={[styles.section, { marginBottom: 32 }]}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={() => setHelpModalVisible(true)}
           >
             <View style={[styles.iconContainer, { backgroundColor: '#dcfce7' }]}>
               <HelpCircle size={24} color="#16a34a" />
             </View>
-            <Text style={styles.menuText}>Ayuda {" "}</Text>
+            <Text style={styles.menuText}>{t('profile.help')} {" "}</Text>
             <Text style={styles.arrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={handleLogout}
           >
             <View style={[styles.iconContainer, { backgroundColor: '#fee2e2' }]}>
               <LogOut size={24} color="#dc2626" />
             </View>
-            <Text style={[styles.menuText, { color: '#dc2626' }]}>Cerrar Sesión</Text>
+            <Text style={[styles.menuText, { color: '#dc2626' }]}>{t('profile.logout')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -229,17 +231,22 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Seleccionar Idioma</Text>
+              <Text style={styles.modalTitle}>{t('profile.select_language')}</Text>
               <TouchableOpacity onPress={() => setLanguageModalVisible(false)}>
                 <X size={24} color="#6b7280" />
               </TouchableOpacity>
             </View>
-            
+
             {languages.map((lang) => (
               <TouchableOpacity
                 key={lang}
                 style={styles.modalOption}
                 onPress={() => {
+                  if (lang === 'Español') {
+                    i18n.changeLanguage('es');
+                  } else if (lang === 'English') {
+                    i18n.changeLanguage('en');
+                  }
                   setSelectedLanguage(lang);
                   setLanguageModalVisible(false);
                 }}
@@ -264,12 +271,12 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Seleccionar Tema</Text>
+              <Text style={styles.modalTitle}>{t('profile.select_theme')}</Text>
               <TouchableOpacity onPress={() => setThemeModalVisible(false)}>
                 <X size={24} color="#6b7280" />
               </TouchableOpacity>
             </View>
-            
+
             {themes.map((theme) => (
               <TouchableOpacity
                 key={theme}
@@ -301,9 +308,9 @@ export default function ProfileScreen() {
             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
               <X size={24} color="#1f2937" />
             </TouchableOpacity>
-            <Text style={styles.editTitle}>Editar Perfil</Text>
+            <Text style={styles.editTitle}>{t('profile.edit_profile')}</Text>
             <TouchableOpacity onPress={handleSaveProfile}>
-              <Text style={styles.saveButton}>Guardar</Text>
+              <Text style={styles.saveButton}>{t('profile.save')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -314,79 +321,75 @@ export default function ProfileScreen() {
                 <User size={64} color="#3b82f6" />
               </View>
               <TouchableOpacity style={styles.changePhotoButton}>
-                <Text style={styles.changePhotoText}>Cambiar foto</Text>
+                <Text style={styles.changePhotoText}>{t('profile.change_photo')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Información Personal */}
             <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Información Personal</Text>
-              
-              <Text style={styles.inputLabel}>Nombre Completo</Text>
+              <Text style={styles.sectionTitle}>{t('profile.personal_info')}</Text>
+
+              <Text style={styles.inputLabel}>{t('profile.full_name')}</Text>
               <TextInput
                 style={styles.input}
                 value={nombre}
                 onChangeText={setNombre}
-                placeholder="Nombre completo"
+                placeholder={t('profile.full_name_placeholder')}
               />
 
-              <Text style={styles.inputLabel}>Correo Electrónico</Text>
+              <Text style={styles.inputLabel}>{t('profile.email_label')}</Text>
               <TextInput
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="correo@ejemplo.com"
+                placeholder={t('profile.email_placeholder')}
                 keyboardType="email-address"
               />
 
-              <Text style={styles.inputLabel}>Teléfono</Text>
+              <Text style={styles.inputLabel}>{t('profile.phone_label')}</Text>
               <TextInput
                 style={styles.input}
                 value={telefono}
                 onChangeText={setTelefono}
-                placeholder="+52 449 123 4567"
+                placeholder={t('profile.phone_placeholder')}
                 keyboardType="phone-pad"
               />
-            </View>
-
-            {/* Información Académica */}
+            </View>            {/* Información Académica */}
             <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Información Académica</Text>
-              
-              <Text style={styles.inputLabel}>No. Control</Text>
+              <Text style={styles.sectionTitle}>{t('profile.academic_info')}</Text>
+
+              <Text style={styles.inputLabel}>{t('profile.control_number_label')}</Text>
               <TextInput
                 style={styles.input}
                 value={noControl}
                 onChangeText={setNoControl}
-                placeholder="20240123"
+                placeholder={t('profile.control_placeholder')}
               />
 
-              <Text style={styles.inputLabel}>Carrera</Text>
+              <Text style={styles.inputLabel}>{t('profile.career_label')}</Text>
               <TextInput
                 style={styles.input}
                 value={carrera}
                 onChangeText={setCarrera}
-                placeholder="Tu carrera"
+                placeholder={t('profile.career_placeholder')}
                 multiline
               />
 
-              <Text style={styles.inputLabel}>Ubicación</Text>
+              <Text style={styles.inputLabel}>{t('profile.location_label')}</Text>
               <TextInput
                 style={styles.input}
                 value={ubicacion}
                 onChangeText={setUbicacion}
-                placeholder="Ciudad, País"
+                placeholder={t('profile.location_placeholder')}
               />
-            </View>
-
-            {/* Botón Cambiar Contraseña */}
+            </View>            {/* Botón Cambiar Contraseña */}
             <View style={styles.formSection}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.changePasswordButton}
                 onPress={() => setPasswordModalVisible(true)}
               >
                 <Lock size={20} color="#2563eb" />
-                <Text style={styles.changePasswordText}>Cambiar Contraseña</Text>
+                <Text style={styles.changePasswordText}>{t('profile.change_password')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -405,7 +408,7 @@ export default function ProfileScreen() {
             <TouchableOpacity onPress={() => setPasswordModalVisible(false)}>
               <X size={24} color="#1f2937" />
             </TouchableOpacity>
-            <Text style={styles.editTitle}>Cambiar Contraseña</Text>
+            <Text style={styles.editTitle}>{t('profile.change_password')}</Text>
             <View style={{ width: 24 }} />
           </View>
 
@@ -414,23 +417,23 @@ export default function ProfileScreen() {
               <View style={styles.passwordIconContainer}>
                 <Lock size={48} color="#2563eb" />
               </View>
-              
+
               <Text style={styles.passwordDescription}>
-                Asegúrate de que tu nueva contraseña tenga al menos 6 caracteres para mantener tu cuenta segura.
+                {t('profile.password_security_info')}
               </Text>
 
               <View style={styles.passwordForm}>
-                <Text style={styles.inputLabel}>Contraseña Actual</Text>
+                <Text style={styles.inputLabel}>{t('profile.current_password')}</Text>
                 <View style={styles.passwordInputContainer}>
                   <TextInput
                     style={styles.passwordInput}
                     value={currentPassword}
                     onChangeText={setCurrentPassword}
-                    placeholder="Ingresa tu contraseña actual"
+                    placeholder={t('profile.current_password_placeholder')}
                     placeholderTextColor="#9ca3af"
                     secureTextEntry={!showCurrentPassword}
                   />
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.eyeButton}
                     onPress={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
@@ -442,17 +445,17 @@ export default function ProfileScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.inputLabel}>Nueva Contraseña</Text>
+                <Text style={styles.inputLabel}>{t('profile.new_password')}</Text>
                 <View style={styles.passwordInputContainer}>
                   <TextInput
                     style={styles.passwordInput}
                     value={newPassword}
                     onChangeText={setNewPassword}
-                    placeholder="Ingresa tu nueva contraseña"
+                    placeholder={t('profile.new_password_placeholder')}
                     placeholderTextColor="#9ca3af"
                     secureTextEntry={!showNewPassword}
                   />
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.eyeButton}
                     onPress={() => setShowNewPassword(!showNewPassword)}
                   >
@@ -464,17 +467,17 @@ export default function ProfileScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.inputLabel}>Confirmar Nueva Contraseña</Text>
+                <Text style={styles.inputLabel}>{t('profile.confirm_password')}</Text>
                 <View style={styles.passwordInputContainer}>
                   <TextInput
                     style={styles.passwordInput}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
-                    placeholder="Confirma tu nueva contraseña"
+                    placeholder={t('profile.confirm_password_placeholder')}
                     placeholderTextColor="#9ca3af"
                     secureTextEntry={!showConfirmPassword}
                   />
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.eyeButton}
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
@@ -486,20 +489,20 @@ export default function ProfileScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.updatePasswordButton}
                   onPress={handleChangePassword}
                 >
-                  <Text style={styles.updatePasswordText}>Actualizar Contraseña</Text>
+                  <Text style={styles.updatePasswordText}>{t('profile.update_password')}</Text>
                 </TouchableOpacity>
               </View>
 
               <View style={styles.passwordTips}>
-                <Text style={styles.tipsTitle}>Consejos de seguridad:</Text>
-                <Text style={styles.tipText}>• Usa al menos 6 caracteres</Text>
-                <Text style={styles.tipText}>• Combina letras, números y símbolos</Text>
-                <Text style={styles.tipText}>• No uses información personal</Text>
-                <Text style={styles.tipText}>• Evita contraseñas comunes</Text>
+                <Text style={styles.tipsTitle}>{t('profile.security_tips')}</Text>
+                <Text style={styles.tipText}>{t('profile.tip_min_chars')}</Text>
+                <Text style={styles.tipText}>{t('profile.tip_combine')}</Text>
+                <Text style={styles.tipText}>{t('profile.tip_no_personal')}</Text>
+                <Text style={styles.tipText}>{t('profile.tip_avoid_common')}</Text>
               </View>
             </View>
           </ScrollView>
@@ -518,7 +521,7 @@ export default function ProfileScreen() {
             <TouchableOpacity onPress={() => setHelpModalVisible(false)}>
               <X size={24} color="#1f2937" />
             </TouchableOpacity>
-            <Text style={styles.editTitle}>Centro de Ayuda</Text>
+            <Text style={styles.editTitle}>{t('profile.help_support')}</Text>
             <View style={{ width: 24 }} />
           </View>
 
@@ -527,7 +530,7 @@ export default function ProfileScreen() {
               <View style={styles.helpIconContainer}>
                 <HelpCircle size={48} color="#16a34a" />
               </View>
-              
+
               <Text style={styles.helpDescription}>
                 ¿Necesitas ayuda? Envíanos un mensaje y nuestro equipo de soporte te responderá lo antes posible.
               </Text>
@@ -554,7 +557,7 @@ export default function ProfileScreen() {
                   textAlignVertical="top"
                 />
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.sendButton}
                   onPress={handleSendHelp}
                 >

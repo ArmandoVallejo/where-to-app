@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   Avatar,
@@ -101,6 +102,7 @@ const groupEventsByLocation = (events) => {
 };
 
 export default function HistoryScreen({ navigation }) {
+  const { t } = useTranslation();
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -118,7 +120,7 @@ export default function HistoryScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} >
-      <StatusBar barStyle="dark-content" backgroundColor= "#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
       {/* Header */}
       {/* <View style={styles.header}>
@@ -175,7 +177,7 @@ export default function HistoryScreen({ navigation }) {
                     textColor="#6B46C1"
                     compact
                   >
-                    Más info
+                    {t('history.event_details')}
                   </Button>
                 </View>
               </Card>
@@ -187,10 +189,10 @@ export default function HistoryScreen({ navigation }) {
           <View style={styles.emptyState}>
             <Ionicons name="calendar-outline" size={64} color="#ccc" />
             <Text style={styles.emptyStateText}>
-              No has asistido a ningún evento aún
+              {t('history.no_events')}
             </Text>
             <Text style={styles.emptyStateSubtext}>
-              Los eventos a los que asistas aparecerán aquí
+              {t('history.attended_events')}
             </Text>
           </View>
         )}
@@ -213,23 +215,23 @@ export default function HistoryScreen({ navigation }) {
       {/* Bottom Navigation */}
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate('Perfil')}
         >
           <Ionicons name="person-outline" size={24} color="#666" />
-          <Text style={styles.navText}>Perfil</Text>
+          <Text style={styles.navText}>{t('sidebar.profile')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate('Home')}
         >
           <Ionicons name="home" size={24} color="#666" />
-          <Text style={styles.navText}>Inicio</Text>
+          <Text style={styles.navText}>{t('sidebar.home')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
           <Ionicons name="calendar-outline" size={24} color="#000" />
-          <Text style={[styles.navText, styles.navTextActive]}>Eventos</Text>
+          <Text style={[styles.navText, styles.navTextActive]}>{t('history.title')}</Text>
           <View style={styles.activeIndicator} />
         </TouchableOpacity>
       </View>      {/* Event Detail Modal */}
@@ -278,7 +280,7 @@ export default function HistoryScreen({ navigation }) {
                       textStyle={styles.attendedChipText}
                       style={styles.attendedChip}
                     >
-                      Asistido
+                      {t('history.attended_on')}
                     </Chip>
 
                     <View style={styles.modalInfoRow}>
@@ -298,7 +300,7 @@ export default function HistoryScreen({ navigation }) {
                     <View style={styles.modalInfoRow}>
                       <Ionicons name="people" size={20} color="#666" />
                       <Text style={styles.modalInfoText}>
-                        {selectedEvent.participants} participantes
+                        {selectedEvent.participants} {t('history.participants')}
                       </Text>
                     </View>
 
@@ -312,7 +314,7 @@ export default function HistoryScreen({ navigation }) {
                     <Divider style={styles.modalDivider} />
 
                     <Text style={styles.modalDescriptionTitle}>
-                      Descripción
+                      {t('history.description')}
                     </Text>
                     <Text style={styles.modalDescription}>
                       {selectedEvent.description}
@@ -327,7 +329,7 @@ export default function HistoryScreen({ navigation }) {
                       onPress={closeModal}
                       style={styles.modalButton}
                     >
-                      Cerrar
+                      {t('history.close')}
                     </Button>
                   </View>
                 </>
