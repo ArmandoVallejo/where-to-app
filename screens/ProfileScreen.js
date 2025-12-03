@@ -10,22 +10,29 @@ import {
   Alert,
 } from 'react-native';
 import { User, Mail, Phone, BookOpen, MapPin, Globe, Palette, HelpCircle, LogOut, Edit, X, Check, Eye, EyeOff, Lock } from 'lucide-react-native';
+
+import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ProfileScreen() {
+
+  const navigation = useNavigation();
+  const { theme, isDarkMode, setTheme: setAppTheme } = useTheme();
   const { t, i18n } = useTranslation();
+
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [helpModalVisible, setHelpModalVisible] = useState(false);
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
-
-  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language === 'es' ? 'Español' : 'English');
-  const [selectedTheme, setSelectedTheme] = useState(t('profile.light'));
 
   // Estados para el formulario de ayuda
   const [asunto, setAsunto] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language === 'es' ? 'Español' : 'English');
+  const selectedTheme = isDarkMode ? 'Oscuro' : 'Claro';
+  
 
   // Estados para cambio de contraseña
   const [currentPassword, setCurrentPassword] = useState('');
@@ -44,7 +51,8 @@ export default function ProfileScreen() {
   const [ubicacion, setUbicacion] = useState('Aguascalientes, México');
 
   const languages = ['Español', 'English', 'Français', 'Deutsch', 'Português'];
-  const themes = [t('profile.light'), t('profile.dark'), t('profile.automatic')];
+
+  const themes = ['Claro', 'Oscuro'];
 
   const handleSaveProfile = () => {
     Alert.alert(t('profile.success'), t('profile.profile_updated'));
@@ -99,10 +107,10 @@ export default function ProfileScreen() {
 
   return (
     <>
-      <ScrollView style={styles.container}>
+      <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {/* Header con botón de editar */}
-        <View style={styles.header}>
-          <TouchableOpacity
+        <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
+          <TouchableOpacity 
             style={styles.editButton}
             onPress={() => setEditModalVisible(true)}
           >
@@ -112,56 +120,56 @@ export default function ProfileScreen() {
 
         {/* Avatar */}
         <View style={styles.avatarContainer}>
-          <View style={styles.avatarWhiteBorder}>
-            <View style={styles.avatar}>
-              <User size={64} color="#3b82f6" />
+          <View style={[styles.avatarWhiteBorder, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.avatar, { backgroundColor: theme.dark ? '#1e3a8a' : '#dbeafe' }]}>
+              <User size={64} color={theme.colors.primary} />
             </View>
           </View>
         </View>
 
         {/* Información principal */}
         <View style={styles.mainInfo}>
-          <Text style={styles.name}>{nombre}</Text>
+          <Text style={[styles.name, { color: theme.colors.text }]}>{nombre}</Text>
           <View style={styles.infoRow}>
-            <Mail size={16} color="#6b7280" />
-            <Text style={styles.infoText}>{email}</Text>
+            <Mail size={16} color={theme.colors.textSecondary} />
+            <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{email}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Phone size={16} color="#6b7280" />
-            <Text style={styles.infoText}>{telefono}</Text>
+            <Phone size={16} color={theme.colors.textSecondary} />
+            <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{telefono}</Text>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
         {/* Información académica */}
         <View style={styles.section}>
           <View style={styles.dataRow}>
-            <BookOpen size={20} color="#3b82f6" />
+            <BookOpen size={20} color={theme.colors.primary} />
             <View style={styles.dataContent}>
-              <Text style={styles.label}>{t('profile.control_number').toUpperCase()}</Text>
-              <Text style={styles.value}>{noControl}</Text>
+              <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{t('profile.control_number').toUpperCase()}</Text>
+              <Text style={[styles.value, { color: theme.colors.text }]}>{noControl}</Text>
             </View>
           </View>
 
           <View style={styles.dataRow}>
-            <BookOpen size={20} color="#3b82f6" />
+            <BookOpen size={20} color={theme.colors.primary} />
             <View style={styles.dataContent}>
-              <Text style={styles.label}>{t('profile.career').toUpperCase()}</Text>
-              <Text style={styles.value}>{carrera}</Text>
+              <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{t('profile.career').toUpperCase()}</Text>
+              <Text style={[styles.value, { color: theme.colors.text }]}>{carrera}</Text>
             </View>
           </View>
 
           <View style={styles.dataRow}>
-            <MapPin size={20} color="#3b82f6" />
+            <MapPin size={20} color={theme.colors.primary} />
             <View style={styles.dataContent}>
-              <Text style={styles.label}>{t('profile.location').toUpperCase()}</Text>
-              <Text style={styles.value}>{ubicacion}</Text>
+              <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{t('profile.location').toUpperCase()}</Text>
+              <Text style={[styles.value, { color: theme.colors.text }]}>{ubicacion}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
         {/* Opciones de configuración */}
         <View style={styles.section}>
@@ -169,54 +177,54 @@ export default function ProfileScreen() {
             style={styles.menuItem}
             onPress={() => setLanguageModalVisible(true)}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#dbeafe' }]}>
-              <Globe size={24} color="#3b82f6" />
+            <View style={[styles.iconContainer, { backgroundColor: theme.dark ? '#1e3a8a' : '#dbeafe' }]}>
+              <Globe size={24} color={theme.colors.primary} />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={styles.menuText}>{t('profile.language')}</Text>
-              <Text style={styles.menuSubtext}>{selectedLanguage}</Text>
+              <Text style={[styles.menuText, { color: theme.colors.text }]}>{t('profile.language')}</Text>
+              <Text style={[styles.menuSubtext, { color: theme.colors.textSecondary }]}>{selectedLanguage}</Text>
             </View>
-            <Text style={styles.arrow}>›</Text>
+            <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => setThemeModalVisible(true)}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#f3e8ff' }]}>
-              <Palette size={24} color="#9333ea" />
+            <View style={[styles.iconContainer, { backgroundColor: theme.dark ? '#4C1D95' : '#f3e8ff' }]}>
+              <Palette size={24} color={theme.colors.secondary} />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={styles.menuText}>{t('profile.theme')}</Text>
-              <Text style={styles.menuSubtext}>{selectedTheme}</Text>
+              <Text style={[styles.menuText, { color: theme.colors.text }]}>{t('profile.theme')}</Text>
+              <Text style={[styles.menuSubtext, { color: theme.colors.textSecondary }]}>{selectedTheme}</Text>
             </View>
-            <Text style={styles.arrow}>›</Text>
+            <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
         {/* Opciones finales */}
         <View style={[styles.section, { marginBottom: 32 }]}>
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => setHelpModalVisible(true)}
+            onPress={() => navigation.navigate('Help')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#dcfce7' }]}>
-              <HelpCircle size={24} color="#16a34a" />
+            <View style={[styles.iconContainer, { backgroundColor: theme.dark ? '#14532d' : '#dcfce7' }]}>
+              <HelpCircle size={24} color={theme.colors.success} />
             </View>
-            <Text style={styles.menuText}>{t('profile.help')} {" "}</Text>
-            <Text style={styles.arrow}>›</Text>
+            <Text style={[styles.menuText, { color: theme.colors.text }]}>{t('profile.help')} {" "}</Text>
+            <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.menuItem}
             onPress={handleLogout}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#fee2e2' }]}>
-              <LogOut size={24} color="#dc2626" />
+            <View style={[styles.iconContainer, { backgroundColor: theme.dark ? '#7f1d1d' : '#fee2e2' }]}>
+              <LogOut size={24} color={theme.colors.error} />
             </View>
-            <Text style={[styles.menuText, { color: '#dc2626' }]}>{t('profile.logout')}</Text>
+            <Text style={[styles.menuText, { color: theme.colors.error }]}>{t('profile.logout')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -229,11 +237,11 @@ export default function ProfileScreen() {
         onRequestClose={() => setLanguageModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('profile.select_language')}</Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}>
+              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{t('profile.select_language')}</Text>
               <TouchableOpacity onPress={() => setLanguageModalVisible(false)}>
-                <X size={24} color="#6b7280" />
+                <X size={24} color={theme.colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -251,9 +259,9 @@ export default function ProfileScreen() {
                   setLanguageModalVisible(false);
                 }}
               >
-                <Text style={styles.modalOptionText}>{lang}</Text>
+                <Text style={[styles.modalOptionText, { color: theme.colors.text }]}>{lang}</Text>
                 {selectedLanguage === lang && (
-                  <Check size={20} color="#3b82f6" />
+                  <Check size={20} color={theme.colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -271,24 +279,26 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('profile.select_theme')}</Text>
+              <Text style={styles.modalTitle}></Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}>
+              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{t('profile.select_theme')}</Text>
               <TouchableOpacity onPress={() => setThemeModalVisible(false)}>
-                <X size={24} color="#6b7280" />
+                <X size={24} color={theme.colors.textSecondary} />
               </TouchableOpacity>
-            </View>
-
-            {themes.map((theme) => (
+            </View>         
+            {themes.map((themeOption) => (
               <TouchableOpacity
-                key={theme}
+                key={themeOption}
                 style={styles.modalOption}
                 onPress={() => {
-                  setSelectedTheme(theme);
+                  setAppTheme(themeOption);
                   setThemeModalVisible(false);
                 }}
               >
-                <Text style={styles.modalOptionText}>{theme}</Text>
-                {selectedTheme === theme && (
-                  <Check size={20} color="#9333ea" />
+                <Text style={[styles.modalOptionText, { color: theme.colors.text }]}>{themeOption}</Text>
+                {selectedTheme === themeOption && (
+                  <Check size={20} color={theme.colors.secondary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -303,93 +313,105 @@ export default function ProfileScreen() {
         visible={editModalVisible}
         onRequestClose={() => setEditModalVisible(false)}
       >
-        <View style={styles.editContainer}>
-          <View style={styles.editHeader}>
+        <View style={[styles.editContainer, { backgroundColor: theme.colors.background }]}>
+          <View style={[styles.editHeader, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-              <X size={24} color="#1f2937" />
+              <X size={24} color={theme.colors.text} />
             </TouchableOpacity>
-            <Text style={styles.editTitle}>{t('profile.edit_profile')}</Text>
+            <Text style={[styles.editTitle, { color: theme.colors.text }]}>{t('profile.edit_profile')}</Text>
             <TouchableOpacity onPress={handleSaveProfile}>
-              <Text style={styles.saveButton}>{t('profile.save')}</Text>
+              <Text style={[styles.saveButton, { color: theme.colors.primary }]}>{t('profile.save')}</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.editForm}>
             {/* Avatar editable */}
-            <View style={styles.editAvatarContainer}>
-              <View style={styles.editAvatar}>
-                <User size={64} color="#3b82f6" />
+            <View style={[styles.editAvatarContainer, { backgroundColor: theme.colors.surface }]}>
+              <View style={[styles.editAvatar, { backgroundColor: theme.dark ? '#1e3a8a' : '#dbeafe' }]}>
+                <User size={64} color={theme.colors.primary} />
               </View>
               <TouchableOpacity style={styles.changePhotoButton}>
-                <Text style={styles.changePhotoText}>{t('profile.change_photo')}</Text>
+                <Text style={[styles.changePhotoText, { color: theme.colors.primary }]}>{t('profile.change_photo')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Información Personal */}
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>{t('profile.personal_info')}</Text>
 
-              <Text style={styles.inputLabel}>{t('profile.full_name')}</Text>
+            <View style={[styles.formSection, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('profile.personal_info')}</Text>
+              
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.full_name')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={nombre}
                 onChangeText={setNombre}
-                placeholder={t('profile.full_name_placeholder')}
-              />
 
-              <Text style={styles.inputLabel}>{t('profile.email_label')}</Text>
+                placeholder="Nombre completo"
+                placeholderTextColor={theme.colors.textSecondary}
+              />
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.email_label')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={email}
                 onChangeText={setEmail}
                 placeholder={t('profile.email_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
                 keyboardType="email-address"
               />
 
-              <Text style={styles.inputLabel}>{t('profile.phone_label')}</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.phone_label')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={telefono}
                 onChangeText={setTelefono}
                 placeholder={t('profile.phone_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
                 keyboardType="phone-pad"
               />
-            </View>            {/* Información Académica */}
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>{t('profile.academic_info')}</Text>
+            </View>
 
-              <Text style={styles.inputLabel}>{t('profile.control_number_label')}</Text>
+            {/* Información Académica */}
+            <View style={[styles.formSection, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('profile.academic_info')}</Text>
+              
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.control_number_label')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={noControl}
                 onChangeText={setNoControl}
                 placeholder={t('profile.control_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
               />
 
-              <Text style={styles.inputLabel}>{t('profile.career_label')}</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.career_label')}</Text>
+
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={carrera}
                 onChangeText={setCarrera}
                 placeholder={t('profile.career_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
                 multiline
               />
 
-              <Text style={styles.inputLabel}>{t('profile.location_label')}</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.location_label')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={ubicacion}
                 onChangeText={setUbicacion}
                 placeholder={t('profile.location_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
               />
-            </View>            {/* Botón Cambiar Contraseña */}
-            <View style={styles.formSection}>
-              <TouchableOpacity
-                style={styles.changePasswordButton}
+            </View>
+
+            {/* Botón Cambiar Contraseña */}
+            <View style={[styles.formSection, { backgroundColor: theme.colors.surface }]}>
+              <TouchableOpacity 
+                style={[styles.changePasswordButton, { backgroundColor: theme.dark ? '#1e3a8a' : '#eff6ff', borderColor: theme.colors.primary }]}
                 onPress={() => setPasswordModalVisible(true)}
               >
-                <Lock size={20} color="#2563eb" />
-                <Text style={styles.changePasswordText}>{t('profile.change_password')}</Text>
+                <Lock size={20} color={theme.colors.primary} />
+                <Text style={[styles.changePasswordText, { color: theme.colors.primary }]}>{t('profile.change_password')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -403,34 +425,34 @@ export default function ProfileScreen() {
         visible={passwordModalVisible}
         onRequestClose={() => setPasswordModalVisible(false)}
       >
-        <View style={styles.editContainer}>
-          <View style={styles.editHeader}>
+        <View style={[styles.editContainer, { backgroundColor: theme.colors.background }]}>
+          <View style={[styles.editHeader, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
             <TouchableOpacity onPress={() => setPasswordModalVisible(false)}>
-              <X size={24} color="#1f2937" />
+              <X size={24} color={theme.colors.text} />
             </TouchableOpacity>
-            <Text style={styles.editTitle}>{t('profile.change_password')}</Text>
+            <Text style={[styles.editTitle, { color: theme.colors.text }]}>{t('profile.change_password')}</Text>
             <View style={{ width: 24 }} />
           </View>
 
           <ScrollView style={styles.editForm}>
             <View style={styles.passwordContent}>
               <View style={styles.passwordIconContainer}>
-                <Lock size={48} color="#2563eb" />
+                <Lock size={48} color={theme.colors.primary} />
               </View>
-
-              <Text style={styles.passwordDescription}>
+              
+              <Text style={[styles.passwordDescription, { color: theme.colors.textSecondary }]}>
                 {t('profile.password_security_info')}
               </Text>
 
               <View style={styles.passwordForm}>
-                <Text style={styles.inputLabel}>{t('profile.current_password')}</Text>
-                <View style={styles.passwordInputContainer}>
+                <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.current_password')}</Text>
+                <View style={[styles.passwordInputContainer, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.border }]}>
                   <TextInput
-                    style={styles.passwordInput}
+                    style={[styles.passwordInput, { color: theme.colors.text }]}
                     value={currentPassword}
                     onChangeText={setCurrentPassword}
                     placeholder={t('profile.current_password_placeholder')}
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.colors.textSecondary}
                     secureTextEntry={!showCurrentPassword}
                   />
                   <TouchableOpacity
@@ -438,21 +460,21 @@ export default function ProfileScreen() {
                     onPress={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
                     {showCurrentPassword ? (
-                      <EyeOff size={20} color="#6b7280" />
+                      <EyeOff size={20} color={theme.colors.textSecondary} />
                     ) : (
-                      <Eye size={20} color="#6b7280" />
+                      <Eye size={20} color={theme.colors.textSecondary} />
                     )}
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.inputLabel}>{t('profile.new_password')}</Text>
-                <View style={styles.passwordInputContainer}>
+                <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.new_password')}</Text>
+                <View style={[styles.passwordInputContainer, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.border }]}>
                   <TextInput
-                    style={styles.passwordInput}
+                    style={[styles.passwordInput, { color: theme.colors.text }]}
                     value={newPassword}
                     onChangeText={setNewPassword}
                     placeholder={t('profile.new_password_placeholder')}
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.colors.textSecondary}
                     secureTextEntry={!showNewPassword}
                   />
                   <TouchableOpacity
@@ -460,21 +482,21 @@ export default function ProfileScreen() {
                     onPress={() => setShowNewPassword(!showNewPassword)}
                   >
                     {showNewPassword ? (
-                      <EyeOff size={20} color="#6b7280" />
+                      <EyeOff size={20} color={theme.colors.textSecondary} />
                     ) : (
-                      <Eye size={20} color="#6b7280" />
+                      <Eye size={20} color={theme.colors.textSecondary} />
                     )}
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.inputLabel}>{t('profile.confirm_password')}</Text>
-                <View style={styles.passwordInputContainer}>
+                <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.confirm_password')}</Text>
+                <View style={[styles.passwordInputContainer, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.border }]}>
                   <TextInput
-                    style={styles.passwordInput}
+                    style={[styles.passwordInput, { color: theme.colors.text }]}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     placeholder={t('profile.confirm_password_placeholder')}
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={theme.colors.textSecondary}
                     secureTextEntry={!showConfirmPassword}
                   />
                   <TouchableOpacity
@@ -482,27 +504,25 @@ export default function ProfileScreen() {
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff size={20} color="#6b7280" />
+                      <EyeOff size={20} color={theme.colors.textSecondary} />
                     ) : (
-                      <Eye size={20} color="#6b7280" />
+                      <Eye size={20} color={theme.colors.textSecondary} />
                     )}
                   </TouchableOpacity>
                 </View>
-
-                <TouchableOpacity
-                  style={styles.updatePasswordButton}
+                <TouchableOpacity 
+                  style={[styles.updatePasswordButton, { backgroundColor: theme.colors.primary }]}
                   onPress={handleChangePassword}
                 >
                   <Text style={styles.updatePasswordText}>{t('profile.update_password')}</Text>
                 </TouchableOpacity>
               </View>
-
-              <View style={styles.passwordTips}>
-                <Text style={styles.tipsTitle}>{t('profile.security_tips')}</Text>
-                <Text style={styles.tipText}>{t('profile.tip_min_chars')}</Text>
-                <Text style={styles.tipText}>{t('profile.tip_combine')}</Text>
-                <Text style={styles.tipText}>{t('profile.tip_no_personal')}</Text>
-                <Text style={styles.tipText}>{t('profile.tip_avoid_common')}</Text>
+              <View style={[styles.passwordTips, { backgroundColor: theme.colors.surfaceVariant }]}>
+                <Text style={[styles.tipsTitle, { color: theme.colors.text }]}>{t('profile.security_tips')}</Text>
+                <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>{t('profile.tip_min_chars')}</Text>
+                <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>{t('profile.tip_combine')}</Text>
+                <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>{t('profile.tip_no_personal')}</Text>
+                <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>{t('profile.tip_avoid_common')}</Text>
               </View>
             </View>
           </ScrollView>
@@ -510,7 +530,7 @@ export default function ProfileScreen() {
       </Modal>
 
       {/* Modal de Ayuda */}
-      <Modal
+      {/* <Modal
         animationType="slide"
         transparent={false}
         visible={helpModalVisible}
@@ -579,7 +599,7 @@ export default function ProfileScreen() {
             </View>
           </ScrollView>
         </View>
-      </Modal>
+      </Modal> */}
     </>
   );
 }
