@@ -44,7 +44,7 @@ const Drawer = createDrawerNavigator();
 
 // 🔹 Drawer personalizado con Logout
 function CustomDrawerContent(props) {
-  const theme = useTheme();
+  // const theme = useTheme();
   const paperTheme = usePaperTheme();
   const { theme } = useTheme();
   const { t } = useTranslation();
