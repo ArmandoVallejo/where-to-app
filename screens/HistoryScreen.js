@@ -345,10 +345,10 @@ export default function HistoryScreen({ navigation }) {
                 </>
               )
               }
-            </Pressable >
-          </Pressable >
-        </Modal >
-      </ >
+            </Pressable>
+          </Pressable>
+        </Modal>
+      </Portal>
     </SafeAreaView >
   );
 }

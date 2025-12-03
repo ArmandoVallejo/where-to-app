@@ -277,9 +277,6 @@ export default function ProfileScreen() {
         onRequestClose={() => setThemeModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}></Text>
           <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
             <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}>
               <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{t('profile.select_theme')}</Text>

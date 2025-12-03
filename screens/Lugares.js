@@ -78,7 +78,7 @@ export default function Lugares({ navigation }) {
             </View>
           ))
         }
-      </ >
+      </ScrollView >
 
       {/* Footer - Botón Material */}
       < View style={styles.footer} >
