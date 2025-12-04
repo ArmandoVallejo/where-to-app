@@ -59,7 +59,7 @@ function CustomDrawerContent(props) {
     // { label: 'Eventos', icon: 'calendar-outline', route: 'Eventos' },
     { label: t('sidebar.places'), icon: 'location-outline', route: 'Lugares' },
     { label: t('sidebar.history'), icon: 'time-outline', route: 'History' },
-    { label: "Help", icon: "person-outline", route: "Help" },
+    { label: "Help", icon: "help-circle-outline", route: "Help" },
     // { label: 'Escanear QR', icon: 'qr-code-outline', route: 'QRScanner' },
   ];
 
