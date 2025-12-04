@@ -77,35 +77,44 @@ export default function HomeScreen({ navigation }) {
 
   // New event modal states
   const [newEventModalVisible, setNewEventModalVisible] = useState(false);
+  const [editEventModalVisible, setEditEventModalVisible] = useState(false);
   const [eventName, setEventName] = useState("");
   const [category, setCategory] = useState("");
+  const [eventLocation, setEventLocation] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const [locationExpanded, setLocationExpanded] = useState(false);
   const [date, setDate] = useState(undefined);
   const [time, setTime] = useState({ hours: 12, minutes: 0 });
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [description, setDescription] = useState("");
+  const [editingEventId, setEditingEventId] = useState(null);
 
   // Load user ID and fetch events
-  useEffect(() => {
-    const loadUserAndEvents = async () => {
-      try {
-        // Get current user ID
-        const storedUserId = await AsyncStorage.getItem("userId");
-        setUserId(storedUserId);
+  const loadUserAndEvents = useCallback(async () => {
+    try {
+      // Get current user ID
+      const storedUserId = await AsyncStorage.getItem("userId");
+      setUserId(storedUserId);
 
-        // Get user role
-        if (storedUserId) {
-          const userRef = ref(db, `users/${storedUserId}`);
-          const userSnapshot = await get(userRef);
-          if (userSnapshot.exists()) {
-            const userData = userSnapshot.val();
-            setUserRole(userData.role);
+      // Get user role
+      if (storedUserId) {
+        const userRef = ref(db, `users/${storedUserId}`);
+        const userSnapshot = await get(userRef);
+        if (userSnapshot.exists()) {
+          const userData = userSnapshot.val();
+          setUserRole(userData.role);
+          if (userData.role === "admin") {
+            setAdmin(true);
+          }
+          else{
+            setAdmin(false);
           }
         }
+      }
 
-        // Fetch events
-        const eventsRef = ref(db, "events");
-        const eventsSnapshot = await get(eventsRef);
+      // Fetch events
+      const eventsRef = ref(db, "events");
+      const eventsSnapshot = await get(eventsRef);
         
         if (eventsSnapshot.exists()) {
           const eventsData = eventsSnapshot.val();
@@ -211,10 +220,11 @@ export default function HomeScreen({ navigation }) {
       } finally {
         setLoadingEvents(false);
       }
-    };
-
-    loadUserAndEvents();
   }, []);
+
+  useEffect(() => {
+    loadUserAndEvents();
+  }, [loadUserAndEvents]);
 
   //
   //
@@ -391,15 +401,205 @@ export default function HomeScreen({ navigation }) {
     setNewEventModalVisible(false);
   };
 
-  const onSaveEvent = () => {
-    console.log({
-      eventName,
-      category,
-      date,
-      time: `${time.hours}:${String(time.minutes).padStart(2, "0")}`,
-      description,
-    });
-    setNewEventModalVisible(false);
+  const onSaveEvent = async () => {
+    try {
+      // Validaciones
+      if (!eventName.trim()) {
+        Alert.alert("Error", "El nombre del evento es requerido");
+        return;
+      }
+      if (!category) {
+        Alert.alert("Error", "Selecciona una categoría");
+        return;
+      }
+      if (!eventLocation) {
+        Alert.alert("Error", "Selecciona una ubicación");
+        return;
+      }
+      if (!date) {
+        Alert.alert("Error", "Selecciona una fecha");
+        return;
+      }
+      if (!description.trim()) {
+        Alert.alert("Error", "La descripción es requerida");
+        return;
+      }
+
+      // Crear fecha y hora ISO
+      const eventDateTime = new Date(date);
+      eventDateTime.setHours(time.hours, time.minutes, 0, 0);
+      const isoDateTime = eventDateTime.toISOString();
+
+      // Generar ID único para el evento
+      const eventId = `event${Date.now()}`;
+
+      // Crear objeto del evento
+      const newEvent = {
+        Nombre: eventName.trim(),
+        Categoria: category,
+        Lugar: eventLocation,
+        Fecha: isoDateTime,
+        Descripcion: description.trim(),
+        Status: "Activo",
+        imageUri: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop"
+      };
+
+      // Guardar en Firebase
+      const eventRef = ref(db, `events/${eventId}`);
+      await set(eventRef, newEvent);
+
+      // Limpiar formulario
+      setEventName("");
+      setCategory("");
+      setEventLocation("");
+      setDate(undefined);
+      setTime({ hours: 12, minutes: 0 });
+      setDescription("");
+      setNewEventModalVisible(false);
+
+      Alert.alert("Éxito", "Evento creado exitosamente");
+
+      // Recargar eventos
+      await loadUserAndEvents();
+    } catch (error) {
+      console.error("❌ Error creating event:", error);
+      Alert.alert("Error", "No se pudo crear el evento. Intenta de nuevo.");
+    }
+  };
+
+  const onEditEvent = (event) => {
+    console.log('🔧 Editing event:', event);
+    // Cargar datos del evento en el formulario
+    setEditingEventId(event.id);
+    setEventName(event.title);
+    setCategory(event.category);
+    setEventLocation(event.location);
+    setDescription(event.description);
+    
+    // Parsear fecha y hora
+    const eventDate = event.sortDate;
+    setDate(eventDate);
+    setTime({ hours: eventDate.getHours(), minutes: eventDate.getMinutes() });
+    
+    closeModal();
+    setEditEventModalVisible(true);
+  };
+
+  const onUpdateEvent = async () => {
+    try {
+      console.log('💾 Updating event ID:', editingEventId);
+      
+      // Validaciones
+      if (!editingEventId) {
+        Alert.alert("Error", "No se pudo identificar el evento a actualizar");
+        return;
+      }
+      if (!eventName.trim()) {
+        Alert.alert("Error", "El nombre del evento es requerido");
+        return;
+      }
+      if (!category) {
+        Alert.alert("Error", "Selecciona una categoría");
+        return;
+      }
+      if (!eventLocation) {
+        Alert.alert("Error", "Selecciona una ubicación");
+        return;
+      }
+      if (!date) {
+        Alert.alert("Error", "Selecciona una fecha");
+        return;
+      }
+      if (!description.trim()) {
+        Alert.alert("Error", "La descripción es requerida");
+        return;
+      }
+
+      // Crear fecha y hora ISO
+      const eventDateTime = new Date(date);
+      eventDateTime.setHours(time.hours, time.minutes, 0, 0);
+      const isoDateTime = eventDateTime.toISOString();
+
+      console.log('📝 Event data to update:', {
+        Nombre: eventName.trim(),
+        Categoria: category,
+        Lugar: eventLocation,
+        Fecha: isoDateTime,
+      });
+
+      // Actualizar objeto del evento
+      const updatedEvent = {
+        Nombre: eventName.trim(),
+        Categoria: category,
+        Lugar: eventLocation,
+        Fecha: isoDateTime,
+        Descripcion: description.trim(),
+        Status: "Activo",
+        imageUri: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop"
+      };
+
+      // Actualizar en Firebase
+      const eventRef = ref(db, `events/${editingEventId}`);
+      await update(eventRef, updatedEvent);
+      console.log('✅ Event updated successfully');
+
+      // Limpiar formulario
+      setEventName("");
+      setCategory("");
+      setEventLocation("");
+      setDate(undefined);
+      setTime({ hours: 12, minutes: 0 });
+      setDescription("");
+      setEditingEventId(null);
+      setEditEventModalVisible(false);
+
+      Alert.alert("Éxito", "Evento actualizado exitosamente");
+
+      // Recargar eventos
+      await loadUserAndEvents();
+    } catch (error) {
+      console.error("❌ Error updating event:", error);
+      Alert.alert("Error", "No se pudo actualizar el evento. Intenta de nuevo.");
+    }
+  };
+
+  const onDeleteEvent = async (event) => {
+    Alert.alert(
+      "Confirmar eliminación",
+      `¿Estás seguro de que deseas eliminar el evento "${event.title}"?`,
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Eliminar evento de Firebase
+              const eventRef = ref(db, `events/${event.id}`);
+              await set(eventRef, null);
+
+              // Si tiene buildingId, eliminar también eventParticipants del edificio
+              if (event.buildingId) {
+                const participantsRef = ref(db, `edificios/${event.buildingId}/eventParticipants/${event.id}`);
+                await set(participantsRef, null);
+              }
+
+              closeModal();
+              Alert.alert("Éxito", "Evento eliminado exitosamente");
+
+              // Actualizar lista local
+              setEvents(prevEvents => prevEvents.filter(e => e.id !== event.id));
+            } catch (error) {
+              console.error("❌ Error deleting event:", error);
+              Alert.alert("Error", "No se pudo eliminar el evento. Intenta de nuevo.");
+            }
+          }
+        }
+      ]
+    );
   };
 
   const onConfirmTime = ({ hours, minutes }) => {
@@ -746,15 +946,6 @@ export default function HomeScreen({ navigation }) {
           </Chip>
         ))}
       </ScrollView>
-        {userRole === "admin" && (
-          <FAB
-        style={styles.fab}
-        icon="plus"
-        size="medium"
-        onPress={onAddEventHandler}
-      />
-        )}
-      
 
       {/* Events List */}
       <ScrollView
@@ -1207,10 +1398,7 @@ export default function HomeScreen({ navigation }) {
                         <Button
                           mode="contained"
                           icon="pencil"
-                          onPress={() => {
-                            console.log("Edit event", selectedEvent.id);
-                            closeModal();
-                          }}
+                          onPress={() => onEditEvent(selectedEvent)}
                           style={styles.adminButton}
                           buttonColor="#6B46C1"
                         >
@@ -1219,10 +1407,7 @@ export default function HomeScreen({ navigation }) {
                         <Button
                           mode="contained"
                           icon="delete"
-                          onPress={() => {
-                            console.log("Delete event", selectedEvent.id);
-                            closeModal();
-                          }}
+                          onPress={() => onDeleteEvent(selectedEvent)}
                           style={styles.adminButton}
                           buttonColor="#EF4444"
                         >
@@ -1236,6 +1421,7 @@ export default function HomeScreen({ navigation }) {
                             navigation.navigate("Participants", {
                               eventId: selectedEvent.id,
                               eventName: selectedEvent.title,
+                              buildingId: selectedEvent.buildingId,
                             });
                           }}
                           style={styles.adminButton}
@@ -1357,7 +1543,7 @@ export default function HomeScreen({ navigation }) {
                   left={(props) => <List.Icon {...props} icon="folder" />}
                   style={styles.accordion}
                 >
-                  {["Académico", "Deportivo", "Servicio social", "Otro"].map(
+                  {["Deportes", "Cultural", "Tecnologia", "Ingenieria", "Talleres", "Conferencias", "Sociales"].map(
                     (item) => (
                       <List.Item
                         key={item}
@@ -1369,6 +1555,34 @@ export default function HomeScreen({ navigation }) {
                       />
                     )
                   )}
+                </List.Accordion>
+              </List.Section>
+            </View>
+
+            {/* Lugar */}
+            <View style={styles.block}>
+              <List.Section>
+                <List.Accordion
+                  title={
+                    eventLocation
+                      ? `Lugar: ${eventLocation}`
+                      : "Seleccionar lugar"
+                  }
+                  expanded={locationExpanded}
+                  onPress={() => setLocationExpanded(!locationExpanded)}
+                  left={(props) => <List.Icon {...props} icon="map-marker" />}
+                  style={styles.accordion}
+                >
+                  {buildings.map((building) => (
+                    <List.Item
+                      key={building.id}
+                      title={building.name}
+                      onPress={() => {
+                        setEventLocation(building.name);
+                        setLocationExpanded(false);
+                      }}
+                    />
+                  ))}
                 </List.Accordion>
               </List.Section>
             </View>
@@ -1432,6 +1646,171 @@ export default function HomeScreen({ navigation }) {
                 style={[styles.roundedButton, { backgroundColor: "#6200ee" }]}
               >
                 Guardar
+              </Button>
+            </View>
+          </ScrollView>
+        </Modal>
+
+        {/* Modal para editar evento */}
+        <Modal
+          visible={editEventModalVisible}
+          onDismiss={() => {
+            setEditEventModalVisible(false);
+            setEditingEventId(null);
+            setEventName("");
+            setCategory("");
+            setEventLocation("");
+            setDate(undefined);
+            setTime({ hours: 12, minutes: 0 });
+            setDescription("");
+          }}
+          contentContainerStyle={[
+            styles.modalContainer,
+            { backgroundColor: theme.colors.surface },
+          ]}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              Editar evento
+            </Text>
+            <Divider style={styles.divider} />
+
+            {/* Nombre */}
+            <TextInput
+              label="Nombre del evento"
+              value={eventName}
+              onChangeText={setEventName}
+              mode="outlined"
+              style={styles.roundedInput}
+              theme={{ roundness: 20 }}
+            />
+
+            {/* Categoría */}
+            <View style={styles.block}>
+              <List.Section>
+                <List.Accordion
+                  title={
+                    category
+                      ? `Categoría: ${category}`
+                      : "Seleccionar categoría"
+                  }
+                  expanded={expanded}
+                  onPress={() => setExpanded(!expanded)}
+                  left={(props) => <List.Icon {...props} icon="folder" />}
+                  style={styles.accordion}
+                >
+                  {["Deportes", "Cultural", "Tecnologia", "Ingenieria", "Talleres", "Conferencias", "Sociales"].map(
+                    (item) => (
+                      <List.Item
+                        key={item}
+                        title={item}
+                        onPress={() => {
+                          setCategory(item);
+                          setExpanded(false);
+                        }}
+                      />
+                    )
+                  )}
+                </List.Accordion>
+              </List.Section>
+            </View>
+
+            {/* Lugar */}
+            <View style={styles.block}>
+              <List.Section>
+                <List.Accordion
+                  title={
+                    eventLocation
+                      ? `Lugar: ${eventLocation}`
+                      : "Seleccionar lugar"
+                  }
+                  expanded={locationExpanded}
+                  onPress={() => setLocationExpanded(!locationExpanded)}
+                  left={(props) => <List.Icon {...props} icon="map-marker" />}
+                  style={styles.accordion}
+                >
+                  {buildings.map((building) => (
+                    <List.Item
+                      key={building.id}
+                      title={building.name}
+                      onPress={() => {
+                        setEventLocation(building.name);
+                        setLocationExpanded(false);
+                      }}
+                    />
+                  ))}
+                </List.Accordion>
+              </List.Section>
+            </View>
+
+            {/* Fecha */}
+            <View style={styles.block}>
+              <DatePickerInput
+                locale="es"
+                label="Fecha del evento"
+                value={date}
+                onChange={(d) => setDate(d)}
+                inputMode="start"
+                mode="outlined"
+                style={styles.roundedInput}
+                theme={{ roundness: 20 }}
+              />
+            </View>
+
+            {/* Hora */}
+            <View style={styles.block}>
+              <Button
+                mode="outlined"
+                icon="clock"
+                onPress={() => setTimePickerVisible(true)}
+                style={styles.roundedButton}
+                labelStyle={{ textTransform: "none" }}
+              >
+                {time
+                  ? `Hora seleccionada: ${String(time.hours).padStart(
+                      2,
+                      "0"
+                    )}:${String(time.minutes).padStart(2, "0")}`
+                  : "Seleccionar hora"}
+              </Button>
+            </View>
+
+            {/* Descripción */}
+            <TextInput
+              label="Descripción"
+              value={description}
+              onChangeText={setDescription}
+              mode="outlined"
+              multiline
+              numberOfLines={8}
+              style={[styles.roundedInput, styles.textArea]}
+              theme={{ roundness: 20 }}
+            />
+
+            {/* Botones */}
+            <View style={styles.buttonRow}>
+              <Button
+                mode="outlined"
+                onPress={() => {
+                  setEditEventModalVisible(false);
+                  setEditingEventId(null);
+                  setEventName("");
+                  setCategory("");
+                  setEventLocation("");
+                  setDate(undefined);
+                  setTime({ hours: 12, minutes: 0 });
+                  setDescription("");
+                }}
+                style={styles.roundedButton}
+              >
+                Cancelar
+              </Button>
+              <Button
+                mode="contained"
+                onPress={onUpdateEvent}
+                style={[styles.roundedButton, { backgroundColor: "#6200ee" }]}
+              >
+                Actualizar
               </Button>
             </View>
           </ScrollView>
