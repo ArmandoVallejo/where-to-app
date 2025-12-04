@@ -140,7 +140,7 @@ export default function RegisterScreen() {
         location: location.trim(),
         career: career.trim(),
         role: "student",
-        historialEventos: [],
+        historialEventos: "",
         createdAt: new Date().toISOString(),
       };
 
