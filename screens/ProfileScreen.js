@@ -174,6 +174,7 @@ export default function ProfileScreen() {
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+        setEditModalVisible(false);
         setPasswordModalVisible(false);
       }
     } catch (error) {
