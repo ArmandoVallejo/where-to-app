@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Pressable,
   StatusBar,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,74 +22,12 @@ import {
   Portal,
   Surface,
   Divider,
-  List,
   Chip,
 } from "react-native-paper";
 import { useTheme } from "../context/ThemeContext";
-
-// Mock data for attended events history
-const ATTENDED_EVENTS = [
-  {
-    id: 1,
-    title: "Campeonato Basket",
-    location: "Cancha",
-    date: "10/NOV/25",
-    time: "10:00 AM",
-    participants: 15,
-    description: "Torneo de baloncesto entre diferentes facultades. Participa y apoya a tu equipo.",
-    imageUri: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop",
-    category: "Deportes",
-    attendedAt: new Date("2025-11-10T10:00:00"),
-  },
-  {
-    id: 2,
-    title: "Taller de Fotografía",
-    location: "Sala de Arte",
-    date: "08/NOV/25",
-    time: "10:00 AM",
-    participants: 25,
-    description: "Aprende técnicas básicas y avanzadas de fotografía digital con profesionales del área.",
-    imageUri: "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=400&h=300&fit=crop",
-    category: "Cultural",
-    attendedAt: new Date("2025-11-08T10:00:00"),
-  },
-  {
-    id: 3,
-    title: "Concierto de Jazz",
-    location: "Auditorio Principal",
-    date: "05/NOV/25",
-    time: "07:00 PM",
-    participants: 80,
-    description: "Noche de jazz con músicos locales e internacionales. Una experiencia musical única.",
-    imageUri: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=400&h=300&fit=crop",
-    category: "Cultural",
-    attendedAt: new Date("2025-11-05T19:00:00"),
-  },
-  {
-    id: 4,
-    title: "Feria de residencias",
-    location: "Auditorio",
-    date: "01/NOV/25",
-    time: "09:00 AM",
-    participants: 20,
-    description: "Estudiantes y egresados conectan con empresas para encontrar residencias profesionales y oportunidades laborales.",
-    imageUri: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop",
-    category: "Deportes",
-    attendedAt: new Date("2025-11-01T09:00:00"),
-  },
-  {
-    id: 5,
-    title: "Hackathon 2025",
-    location: "Laboratorio de Innovación",
-    date: "28/OCT/25",
-    time: "08:00 AM",
-    participants: 60,
-    description: "Evento de programación de 24 horas. Forma tu equipo y crea soluciones innovadoras.",
-    imageUri: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=300&fit=crop",
-    category: "Academico",
-    attendedAt: new Date("2025-10-28T08:00:00"),
-  },
-];
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ref, get, onValue } from 'firebase/database';
+import { db } from '../config/config';
 
 // Group events by location
 const groupEventsByLocation = (events) => {
@@ -107,8 +46,85 @@ export default function HistoryScreen({ navigation }) {
   const { theme } = useTheme();
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [attendedEvents, setAttendedEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
 
-  const groupedEvents = groupEventsByLocation(ATTENDED_EVENTS);
+  // Cargar eventos del usuario desde Firebase
+  useEffect(() => {
+    loadUserEvents();
+  }, []);
+
+  const loadUserEvents = async () => {
+    try {
+      setLoading(true);
+      
+      // Obtener el userId de AsyncStorage
+      const storedUserId = await AsyncStorage.getItem('userId');
+      
+      if (!storedUserId) {
+        console.log("❌ No se encontró el ID de usuario");
+        setLoading(false);
+        return;
+      }
+
+      setUserId(storedUserId);
+      console.log("📱 UserId recuperado:", storedUserId);
+
+      // Cargar historial de eventos desde users/{userId}/historialEventos
+      const historialRef = ref(db, `users/${storedUserId}/historialEventos`);
+      
+      onValue(historialRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const historialData = snapshot.val();
+          const userEvents = [];
+          
+          // Recorrer ubicaciones (Centro de computo, Salones A-C, etc.)
+          for (const ubicacion in historialData) {
+            const eventosEnUbicacion = historialData[ubicacion];
+            
+            // Recorrer eventos en cada ubicación
+            for (const eventId in eventosEnUbicacion) {
+              const eventData = eventosEnUbicacion[eventId];
+              
+              userEvents.push({
+                id: eventId,
+                title: eventData.nombre || eventData.title || 'Evento sin nombre',
+                location: ubicacion, // La ubicación viene de la clave padre
+                date: eventData.fecha || eventData.date || '',
+                time: eventData.hora || eventData.time || '',
+                participants: eventData.participantes || eventData.participants || 0,
+                description: eventData.descripcion || eventData.description || '',
+                imageUri: eventData.imagen || eventData.imageUri || null,
+                category: eventData.categoria || eventData.category || 'General',
+                attendedAt: eventData.fecha || new Date().toISOString(),
+              });
+            }
+          }
+          
+          // Ordenar eventos por fecha (más reciente primero)
+          userEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+          
+          console.log(`✅ ${userEvents.length} eventos cargados del historial`);
+          setAttendedEvents(userEvents);
+        } else {
+          console.log("ℹ️ No hay eventos en el historial");
+          setAttendedEvents([]);
+        }
+        
+        setLoading(false);
+      }, (error) => {
+        console.error("❌ Error cargando eventos:", error);
+        setLoading(false);
+      });
+
+    } catch (error) {
+      console.error("❌ Error al cargar eventos:", error);
+      setLoading(false);
+    }
+  };
+
+  const groupedEvents = groupEventsByLocation(attendedEvents);
 
   const openEventModal = (event) => {
     setSelectedEvent(event);
@@ -120,23 +136,36 @@ export default function HistoryScreen({ navigation }) {
     setSelectedEvent(null);
   };
 
-  return (
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+      return `${day}/${month}/${year}`;
+    } catch (error) {
+      return dateString;
+    }
+  };
 
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} >
-      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.colors.surface} />
-
-      {/* Header */}
-      {/* <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
-            <Ionicons name="menu" size={24} color="#000" />
-          </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerMainText}>Historial de eventos</Text>
-          </View>
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+            Cargando historial...
+          </Text>
         </View>
-        <View style={styles.headerPlaceholder} />
-      </View> */}
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.colors.surface} />
 
       {/* Events List Grouped by Location */}
       <ScrollView
@@ -144,57 +173,57 @@ export default function HistoryScreen({ navigation }) {
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
-        {Object.keys(groupedEvents).map((location) => (
-          <View key={location} style={styles.locationGroup}>
-            {/* Location Header */}
-            <View style={styles.locationHeader}>
-              <Text style={[styles.locationTitle, { color: theme.colors.text }]}>{location}</Text>
-              <Ionicons name="location-sharp" size={20} color={theme.colors.text} />
-            </View>
+        {attendedEvents.length > 0 ? (
+          Object.keys(groupedEvents).map((location) => (
+            <View key={location} style={styles.locationGroup}>
+              {/* Location Header */}
+              <View style={styles.locationHeader}>
+                <Text style={[styles.locationTitle, { color: theme.colors.text }]}>{location}</Text>
+                <Ionicons name="location-sharp" size={20} color={theme.colors.text} />
+              </View>
 
-            {/* Events in this location */}
-            {groupedEvents[location].map((event) => (
-              <Card
-                key={event.id}
-                style={styles.eventCard}
-                onPress={() => openEventModal(event)}
-                mode="elevated"
-              >
-                <View style={styles.eventContent}>
-                  <Avatar.Text
-                    size={48}
-                    label={event.title.charAt(0).toUpperCase()}
-                    style={styles.eventAvatar}
-                    labelStyle={styles.avatarLabel}
-                  />
-                  <View style={styles.eventInfo}>
-                    <Text style={[styles.eventTitle, { color: theme.colors.text }]}>{event.title}</Text>
-                    <Text style={[styles.eventDate, { color: theme.colors.textSecondary }]}>
-                      {event.date} {event.time}
-                    </Text>
+              {/* Events in this location */}
+              {groupedEvents[location].map((event) => (
+                <Card
+                  key={event.id}
+                  style={styles.eventCard}
+                  onPress={() => openEventModal(event)}
+                  mode="elevated"
+                >
+                  <View style={styles.eventContent}>
+                    <Avatar.Text
+                      size={48}
+                      label={event.title.charAt(0).toUpperCase()}
+                      style={styles.eventAvatar}
+                      labelStyle={styles.avatarLabel}
+                    />
+                    <View style={styles.eventInfo}>
+                      <Text style={[styles.eventTitle, { color: theme.colors.text }]}>{event.title}</Text>
+                      <Text style={[styles.eventDate, { color: theme.colors.textSecondary }]}>
+                        {formatDate(event.date)} {event.time}
+                      </Text>
+                    </View>
+                    <Button
+                      mode="text"
+                      onPress={() => openEventModal(event)}
+                      icon="dots-horizontal"
+                      textColor={theme.colors.primary}
+                      compact
+                    >
+                      {t('history.event_details')}
+                    </Button>
                   </View>
-                  <Button
-                    mode="text"
-                    onPress={() => openEventModal(event)}
-                    icon="dots-horizontal"
-                    textColor="#6B46C1"
-                    compact
-                  >
-                    {t('history.event_details')}
-                  </Button>
-                </View>
-              </Card>
-            ))}
-          </View>
-        ))}
-
-        {ATTENDED_EVENTS.length === 0 && (
+                </Card>
+              ))}
+            </View>
+          ))
+        ) : (
           <View style={styles.emptyState}>
-            <Ionicons name="calendar-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyStateText}>
+            <Ionicons name="calendar-outline" size={64} color={theme.colors.textSecondary} />
+            <Text style={[styles.emptyStateText, { color: theme.colors.text }]}>
               {t('history.no_events')}
             </Text>
-            <Text style={styles.emptyStateSubtext}>
+            <Text style={[styles.emptyStateSubtext, { color: theme.colors.textSecondary }]}>
               {t('history.attended_events')}
             </Text>
           </View>
@@ -203,19 +232,17 @@ export default function HistoryScreen({ navigation }) {
 
       {/* Floating Action Button */}
       <IconButton
-        icon="history"
+        icon="refresh"
         mode="contained"
         size={28}
         iconColor="#fff"
-        containerColor="#6B46C1"
+        containerColor={theme.colors.primary}
         style={styles.fab}
         onPress={() => {
-          // Could navigate to a calendar view or filter options
-          console.log("Show filter/calendar options");
+          loadUserEvents();
         }}
       />
 
-      {/* Bottom Navigation */}
       {/* Bottom Navigation */}
       <View style={[styles.bottomNav, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
         <TouchableOpacity
@@ -224,7 +251,6 @@ export default function HistoryScreen({ navigation }) {
         >
           <Ionicons name="person-outline" size={24} color={theme.colors.textSecondary} />
           <Text style={[styles.navText, { color: theme.colors.textSecondary }]}>{t('sidebar.profile')}</Text>
-
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navItem}
@@ -237,10 +263,11 @@ export default function HistoryScreen({ navigation }) {
           <Ionicons name="calendar-outline" size={24} color={theme.colors.text} />
           <Text style={[styles.navText, styles.navTextActive, { color: theme.colors.text }]}>{t('history.title')}</Text>
           <View style={[styles.activeIndicator, { backgroundColor: theme.colors.primary }]} />
-
         </TouchableOpacity>
-      </View > {/* Event Detail Modal */}
-      < Portal >
+      </View>
+
+      {/* Event Detail Modal */}
+      <Portal>
         <Modal
           animationType="fade"
           transparent={true}
@@ -266,7 +293,7 @@ export default function HistoryScreen({ navigation }) {
                         {selectedEvent.title}
                       </Text>
                       <Text style={[styles.modalSubtitle, { color: theme.colors.textSecondary }]}>
-                        {selectedEvent.date} {selectedEvent.time}
+                        {formatDate(selectedEvent.date)} {selectedEvent.time}
                       </Text>
                     </View>
                     <IconButton icon="close" size={24} onPress={closeModal} />
@@ -291,7 +318,7 @@ export default function HistoryScreen({ navigation }) {
                     <View style={styles.modalInfoRow}>
                       <Ionicons name="calendar" size={20} color={theme.colors.textSecondary} />
                       <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
-                        {selectedEvent.date}
+                        {formatDate(selectedEvent.date)}
                       </Text>
                     </View>
 
@@ -303,14 +330,9 @@ export default function HistoryScreen({ navigation }) {
                     </View>
 
                     <View style={styles.modalInfoRow}>
-                      <Ionicons name="people" size={20} color="#666" />
-                      <Text style={styles.modalInfoText}>
-                        {selectedEvent.participants} {t('history.participants')}
-                      </Text>
                       <Ionicons name="people" size={20} color={theme.colors.textSecondary} />
                       <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
                         {selectedEvent.participants} {t('history.participants')}
-
                       </Text>
                     </View>
 
@@ -327,7 +349,7 @@ export default function HistoryScreen({ navigation }) {
                       {t('history.description')}
                     </Text>
                     <Text style={[styles.modalDescription, { color: theme.colors.textSecondary }]}>
-                      {selectedEvent.description}
+                      {selectedEvent.description || 'Sin descripción disponible'}
                     </Text>
                   </ScrollView>
 
@@ -343,13 +365,12 @@ export default function HistoryScreen({ navigation }) {
                     </Button>
                   </View>
                 </>
-              )
-              }
+              )}
             </Pressable>
           </Pressable>
         </Modal>
       </Portal>
-    </SafeAreaView >
+    </SafeAreaView>
   );
 }
 
@@ -357,6 +378,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
   header: {
     flexDirection: "row",
