@@ -4,12 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
-  Modal,
-  Pressable,
-  StatusBar,
   TouchableOpacity,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,16 +14,11 @@ import { useTranslation } from 'react-i18next';
 import {
   Card,
   Avatar,
-  Button,
   IconButton,
-  Portal,
-  Surface,
-  Divider,
-  Chip,
 } from "react-native-paper";
 import { useTheme } from "../context/ThemeContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ref, get, onValue } from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
 import { db } from '../config/config';
 
 // Group events by location
@@ -44,8 +36,6 @@ const groupEventsByLocation = (events) => {
 export default function HistoryScreen({ navigation }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
   const [attendedEvents, setAttendedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
@@ -126,16 +116,6 @@ export default function HistoryScreen({ navigation }) {
 
   const groupedEvents = groupEventsByLocation(attendedEvents);
 
-  const openEventModal = (event) => {
-    setSelectedEvent(event);
-    setModalVisible(true);
-  };
-
-  const closeModal = () => {
-    setModalVisible(false);
-    setSelectedEvent(null);
-  };
-
   const formatDate = (dateString) => {
     if (!dateString) return '';
     
@@ -187,7 +167,6 @@ export default function HistoryScreen({ navigation }) {
                 <Card
                   key={event.id}
                   style={styles.eventCard}
-                  onPress={() => openEventModal(event)}
                   mode="elevated"
                 >
                   <View style={styles.eventContent}>
@@ -203,15 +182,7 @@ export default function HistoryScreen({ navigation }) {
                         {formatDate(event.date)} {event.time}
                       </Text>
                     </View>
-                    <Button
-                      mode="text"
-                      onPress={() => openEventModal(event)}
-                      icon="dots-horizontal"
-                      textColor={theme.colors.primary}
-                      compact
-                    >
-                      {t('history.event_details')}
-                    </Button>
+                    <Ionicons name="checkmark-circle" size={32} color="#10B981" />
                   </View>
                 </Card>
               ))}
@@ -265,111 +236,6 @@ export default function HistoryScreen({ navigation }) {
           <View style={[styles.activeIndicator, { backgroundColor: theme.colors.primary }]} />
         </TouchableOpacity>
       </View>
-
-      {/* Event Detail Modal */}
-      <Portal>
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={closeModal}
-        >
-          <Pressable style={styles.modalOverlay} onPress={closeModal}>
-            <Pressable
-              style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}
-              onPress={(e) => e.stopPropagation()}
-            >
-              {selectedEvent && (
-                <>
-                  <Surface style={[styles.modalHeader, { backgroundColor: theme.colors.surface }]} elevation={0}>
-                    <Avatar.Text
-                      size={48}
-                      label={selectedEvent.title.charAt(0).toUpperCase()}
-                      style={styles.modalIconContainer}
-                      labelStyle={styles.modalIcon}
-                    />
-                    <View style={styles.modalHeaderText}>
-                      <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-                        {selectedEvent.title}
-                      </Text>
-                      <Text style={[styles.modalSubtitle, { color: theme.colors.textSecondary }]}>
-                        {formatDate(selectedEvent.date)} {selectedEvent.time}
-                      </Text>
-                    </View>
-                    <IconButton icon="close" size={24} onPress={closeModal} />
-                  </Surface>
-
-                  {selectedEvent.imageUri && (
-                    <Image
-                      source={{ uri: selectedEvent.imageUri }}
-                      style={styles.modalImage}
-                    />
-                  )}
-
-                  <ScrollView style={styles.modalDetails}>
-                    <Chip
-                      icon="check-circle"
-                      textStyle={styles.attendedChipText}
-                      style={styles.attendedChip}
-                    >
-                      {t('history.attended_on')}
-                    </Chip>
-
-                    <View style={styles.modalInfoRow}>
-                      <Ionicons name="calendar" size={20} color={theme.colors.textSecondary} />
-                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
-                        {formatDate(selectedEvent.date)}
-                      </Text>
-                    </View>
-
-                    <View style={styles.modalInfoRow}>
-                      <Ionicons name="time" size={20} color={theme.colors.textSecondary} />
-                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
-                        {selectedEvent.time}
-                      </Text>
-                    </View>
-
-                    <View style={styles.modalInfoRow}>
-                      <Ionicons name="people" size={20} color={theme.colors.textSecondary} />
-                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
-                        {selectedEvent.participants} {t('history.participants')}
-                      </Text>
-                    </View>
-
-                    <View style={styles.modalInfoRow}>
-                      <Ionicons name="location" size={20} color={theme.colors.textSecondary} />
-                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
-                        {selectedEvent.location}
-                      </Text>
-                    </View>
-
-                    <Divider style={styles.modalDivider} />
-
-                    <Text style={[styles.modalDescriptionTitle, { color: theme.colors.text }]}>
-                      {t('history.description')}
-                    </Text>
-                    <Text style={[styles.modalDescription, { color: theme.colors.textSecondary }]}>
-                      {selectedEvent.description || 'Sin descripción disponible'}
-                    </Text>
-                  </ScrollView>
-
-                  <Divider />
-
-                  <View style={styles.modalFooter}>
-                    <Button
-                      mode="outlined"
-                      onPress={closeModal}
-                      style={styles.modalButton}
-                    >
-                      {t('history.close')}
-                    </Button>
-                  </View>
-                </>
-              )}
-            </Pressable>
-          </Pressable>
-        </Modal>
-      </Portal>
     </SafeAreaView>
   );
 }
