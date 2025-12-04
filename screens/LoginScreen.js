@@ -12,13 +12,13 @@ import {
   Pressable,
   Heading,
   Card,
-
 } from "@gluestack-ui/themed";
 import { useNavigation } from "@react-navigation/native";
-import { ref, query, orderByChild, equalTo, get } from 'firebase/database';
+import { ref, query, orderByChild, equalTo, get } from "firebase/database";
 import { db } from "../config/config";
 import { useTheme } from "../context/ThemeContext";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen() {
   const { theme } = useTheme();
@@ -40,28 +40,18 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!control.trim() || !password.trim()) {
-
-      Alert.alert(t('login.error'), t('login.fill_fields'));
+      Alert.alert(t("login.error"), t("login.fill_fields"));
 
       return;
     }
 
     if (!validateControlNumber(control)) {
-      Alert.alert(
-        t('login.error'),
-        t('login.invalid_control')
-
-      );
+      Alert.alert(t("login.error"), t("login.invalid_control"));
       return;
     }
 
     if (!validatePassword(password)) {
-      Alert.alert(
-
-        t('login.error'),
-        t('login.invalid_password')
-
-      );
+      Alert.alert(t("login.error"), t("login.invalid_password"));
       return;
     }
 
@@ -94,10 +84,14 @@ export default function LoginScreen() {
         return;
       }
 
+      // Guardar el userId en AsyncStorage
+      await AsyncStorage.setItem("userId", userId);
+      console.log("✅ UserId guardado en AsyncStorage:", userId);
+
       // Login exitoso
       console.log("✅ Login exitoso:", userData);
 
-      Alert.alert("Bienvenido", `Hola ${userData.control}`, [
+      Alert.alert("Bienvenido", `Hola ${userData.name ?? ""}`, [
         {
           text: "OK",
           onPress: () =>
@@ -134,7 +128,7 @@ export default function LoginScreen() {
       {/* Texto Welcome */}
       <Box mb="$5">
         <Heading size="lg" textAlign="center">
-          {t('login.welcome')}
+          {t("login.welcome")}
         </Heading>
       </Box>
 
@@ -152,11 +146,11 @@ export default function LoginScreen() {
           {/* Campo No. Control */}
           <Box>
             <Text mb="$2" color="$black">
-              {t('login.control_number')}
+              {t("login.control_number")}
             </Text>
             <Input borderColor="$gray300" borderRadius="$md">
               <InputField
-                placeholder={t('login.placeholder')}
+                placeholder={t("login.placeholder")}
                 value={control}
                 onChangeText={setControl}
                 autoCapitalize="none"
@@ -167,11 +161,11 @@ export default function LoginScreen() {
           {/* Campo Password */}
           <Box>
             <Text mb="$2" color="$black">
-              {t('login.password')}
+              {t("login.password")}
             </Text>
             <Input borderColor="$gray300" borderRadius="$md">
               <InputField
-                placeholder={t('login.placeholder')}
+                placeholder={t("login.placeholder")}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -185,18 +179,20 @@ export default function LoginScreen() {
             borderRadius="$md"
             mt="$2"
             onPress={handleLogin}
+            isDisabled={loading}
           >
-            <ButtonText color="$white">{t('login.sign_in')}</ButtonText>
+            <ButtonText color="$white">
+              {loading ? "Ingresando..." : t("login.sign_in")}
+            </ButtonText>
           </Button>
 
           {/* Texto Create one */}
           <Center>
             <Text color="$black">
-              {t('login.no_account')}{' '}
-              <Pressable onPress={() => navigation.navigate('Register')}>
-
+              {t("login.no_account")}{" "}
+              <Pressable onPress={() => navigation.navigate("Register")}>
                 <Text color="$purple600" bold>
-                  {t('login.create_one')}
+                  {t("login.create_one")}
                 </Text>
               </Pressable>
             </Text>

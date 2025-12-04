@@ -19,6 +19,7 @@ import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import i18n from './i18n';
 
@@ -33,8 +34,8 @@ import HistoryScreen from "./screens/HistoryScreen";
 import QRScannerScreen from "./screens/QRScannerScreen";
 import ParticipantsScreen from "./screens/ParticipantsScreen";
 import HelpScreen from "./screens/HelpScreen";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SEED_VERSION, runSeed  } from "./config/seed";
+
+import { runSeed  } from "./config/seed";
 
 // Evita que el splash se oculte automáticamente
 SplashScreen.preventAutoHideAsync();
@@ -62,8 +63,9 @@ function CustomDrawerContent(props) {
     // { label: 'Escanear QR', icon: 'qr-code-outline', route: 'QRScanner' },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // 👉 Aquí podrías limpiar el estado o token del usuario
+    await AsyncStorage.removeItem('userId');
     navigation.reset({
       index: 0,
       routes: [{ name: "Login" }],
@@ -204,21 +206,7 @@ export default function App() {
   useEffect(() => {
     const initializeSeed = async () => {
       try {
-        console.log("🔍 Revisando versión del seed...");
-
-        const storedVersion = await AsyncStorage.getItem("seed_version");
-
-        if (storedVersion === SEED_VERSION) {
-          console.log("⚠️ Seed ya está actualizado. No se ejecuta.");
-          return;
-        }
-
-        console.log("🌱 Seed desactualizado o no existe. Ejecutando...");
         await runSeed();
-
-        // Guardar nueva versión
-        await AsyncStorage.setItem("seed_version", SEED_VERSION);
-        console.log("✅ Seed actualizado a versión:", SEED_VERSION);
       } catch (error) {
         console.log("❌ Error ejecutando seed:", error);
       }

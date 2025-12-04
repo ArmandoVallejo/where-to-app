@@ -1,41 +1,116 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { User, Mail, Phone, BookOpen, MapPin, Globe, Palette, HelpCircle, LogOut, Edit, X, Check, Eye, EyeOff, Lock } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ref, push, get } from 'firebase/database';
+import { db } from '../config/config';
 
 export default function HelpScreen() {
   const { theme } = useTheme();
+  
   // Estados para el formulario de ayuda
   const [asunto, setAsunto] = useState("");
   const [descripcion, setDescripcion] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
-  const handleSendHelp = () => {
+  // Cargar información del usuario al iniciar
+  useEffect(() => {
+    loadUserInfo();
+  }, []);
+
+  const loadUserInfo = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      
+      if (userId) {
+        const userRef = ref(db, `users/${userId}`);
+        const snapshot = await get(userRef);
+        
+        if (snapshot.exists()) {
+          const userData = snapshot.val();
+          setUserName(userData.name || '');
+          setUserEmail(userData.email || '');
+        }
+      }
+    } catch (error) {
+      console.error("Error cargando info del usuario:", error);
+    }
+  };
+
+  const handleSendHelp = async () => {
     if (!asunto.trim() || !descripcion.trim()) {
       Alert.alert("Error", "Por favor completa todos los campos");
       return;
     }
 
-    Alert.alert(
-      "Éxito",
-      "Tu mensaje ha sido enviado. Nos pondremos en contacto contigo pronto."
-    );
-    setAsunto("");
-    setDescripcion("");
+    try {
+      setLoading(true);
+
+      // Obtener el userId
+      const userId = await AsyncStorage.getItem('userId');
+      
+      if (!userId) {
+        Alert.alert("Error", "No se pudo identificar al usuario");
+        setLoading(false);
+        return;
+      }
+
+      // Crear el objeto del mensaje de ayuda
+      const helpMessage = {
+        userId: userId,
+        userName: userName,
+        userEmail: userEmail,
+        asunto: asunto,
+        descripcion: descripcion,
+        timestamp: new Date().toISOString(),
+        status: 'pending', // pending, in_progress, resolved
+        createdAt: new Date().toISOString(),
+      };
+
+      // Guardar en Firebase bajo /helpMessages
+      const helpMessagesRef = ref(db, 'helpMessages');
+      await push(helpMessagesRef, helpMessage);
+
+      console.log("✅ Mensaje de ayuda enviado exitosamente");
+      
+      Alert.alert(
+        "Éxito",
+        "Tu mensaje ha sido enviado. Nos pondremos en contacto contigo pronto.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              setAsunto("");
+              setDescripcion("");
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error("❌ Error al enviar mensaje:", error);
+      Alert.alert(
+        "Error",
+        "No se pudo enviar tu mensaje. Por favor intenta de nuevo."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={[styles.editContainer, { backgroundColor: theme.colors.background }]}>
-  
-
       <ScrollView style={styles.editForm}>
         <View style={styles.helpContent}>
           <View style={styles.helpIconContainer}>
@@ -47,6 +122,20 @@ export default function HelpScreen() {
             responderá lo antes posible.
           </Text>
 
+          {/* Mostrar info del usuario si está disponible */}
+          {userName && (
+            <View style={[styles.userInfoCard, { backgroundColor: theme.colors.surfaceVariant }]}>
+              <Text style={[styles.userInfoText, { color: theme.colors.text }]}>
+                Enviando como: {userName}
+              </Text>
+              {userEmail && (
+                <Text style={[styles.userInfoSubtext, { color: theme.colors.textSecondary }]}>
+                  {userEmail}
+                </Text>
+              )}
+            </View>
+          )}
+
           <View style={styles.helpForm}>
             <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>Asunto</Text>
             <TextInput
@@ -55,6 +144,7 @@ export default function HelpScreen() {
               onChangeText={setAsunto}
               placeholder="Ej: Problema con mi cuenta"
               placeholderTextColor={theme.colors.textSecondary}
+              editable={!loading}
             />
 
             <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>Descripción</Text>
@@ -67,13 +157,23 @@ export default function HelpScreen() {
               multiline
               numberOfLines={6}
               textAlignVertical="top"
+              editable={!loading}
             />
 
             <TouchableOpacity
-              style={[styles.sendButton, { backgroundColor: theme.colors.success }]}
+              style={[
+                styles.sendButton, 
+                { backgroundColor: theme.colors.success },
+                loading && styles.sendButtonDisabled
+              ]}
               onPress={handleSendHelp}
+              disabled={loading}
             >
-              <Text style={styles.sendButtonText}>Enviar Mensaje</Text>
+              {loading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text style={styles.sendButtonText}>Enviar Mensaje</Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -87,6 +187,25 @@ export default function HelpScreen() {
               <Phone size={20} color={theme.colors.textSecondary} />
               <Text style={[styles.contactText, { color: theme.colors.textSecondary }]}>+52 449 123 4567</Text>
             </View>
+          </View>
+
+          {/* Sección de consejos */}
+          <View style={[styles.tipsSection, { backgroundColor: theme.colors.surfaceVariant }]}>
+            <Text style={[styles.tipsTitle, { color: theme.colors.text }]}>
+              Consejos para una mejor respuesta:
+            </Text>
+            <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
+              • Sé específico sobre tu problema
+            </Text>
+            <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
+              • Include capturas de pantalla si es posible
+            </Text>
+            <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
+              • Menciona cualquier mensaje de error
+            </Text>
+            <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>
+              • Responderemos en 24-48 horas
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -131,8 +250,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6b7280',
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
     lineHeight: 24,
+  },
+  userInfoCard: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  userInfoText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  userInfoSubtext: {
+    fontSize: 12,
+    color: '#6b7280',
   },
   helpForm: {
     marginBottom: 32,
@@ -174,6 +310,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  sendButtonDisabled: {
+    opacity: 0.6,
+  },
   sendButtonText: {
     color: 'white',
     fontSize: 16,
@@ -185,6 +324,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
     borderRadius: 12,
     padding: 20,
+    marginBottom: 20,
   },
   contactTitle: {
     fontSize: 14,
@@ -201,5 +341,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6b7280',
     marginLeft: 10,
+  },
+
+  // Sección de consejos
+  tipsSection: {
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    padding: 20,
+  },
+  tipsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  tipText: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginBottom: 6,
+    lineHeight: 20,
   },
 });
