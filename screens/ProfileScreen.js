@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,15 +8,17 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { User, Mail, Phone, BookOpen, MapPin, Globe, Palette, HelpCircle, LogOut, Edit, X, Check, Eye, EyeOff, Lock } from 'lucide-react-native';
-
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ref, get, update } from 'firebase/database';
+import { db } from '../config/config';
 
 export default function ProfileScreen() {
-
   const navigation = useNavigation();
   const { theme, isDarkMode, setTheme: setAppTheme } = useTheme();
   const { t, i18n } = useTranslation();
@@ -25,14 +27,7 @@ export default function ProfileScreen() {
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
-
-  // Estados para el formulario de ayuda
-  const [asunto, setAsunto] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  
-  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language === 'es' ? 'Español' : 'English');
-  const selectedTheme = isDarkMode ? 'Oscuro' : 'Claro';
-  
+  const [loading, setLoading] = useState(true);
 
   // Estados para cambio de contraseña
   const [currentPassword, setCurrentPassword] = useState('');
@@ -42,36 +37,103 @@ export default function ProfileScreen() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Estados para editar perfil
-  const [nombre, setNombre] = useState('Juan Pérez García');
-  const [email, setEmail] = useState('juan.perez@ejemplo.com');
-  const [telefono, setTelefono] = useState('+52 449 123 4567');
-  const [noControl, setNoControl] = useState('20240123');
-  const [carrera, setCarrera] = useState('Ingeniería en Sistemas Computacionales');
-  const [ubicacion, setUbicacion] = useState('Aguascalientes, México');
+  // Estados para el perfil del usuario
+  const [userId, setUserId] = useState(null);
+  const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [noControl, setNoControl] = useState('');
+  const [carrera, setCarrera] = useState('');
+  const [ubicacion, setUbicacion] = useState('');
+  
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language === 'es' ? 'Español' : 'English');
+  const selectedTheme = isDarkMode ? 'Oscuro' : 'Claro';
 
-  const languages = ['Español', 'English', 'Français', 'Deutsch', 'Português'];
-
+  // const languages = ['Español', 'English', 'Français', 'Deutsch', 'Português'];
+  const languages = ['Español', 'English'];
   const themes = ['Claro', 'Oscuro'];
 
-  const handleSaveProfile = () => {
-    Alert.alert(t('profile.success'), t('profile.profile_updated'));
-    setEditModalVisible(false);
-  };
+  // Cargar datos del usuario desde Firebase
+  useEffect(() => {
+    loadUserData();
+  }, []);
 
-  const handleSendHelp = () => {
-    if (!asunto.trim() || !descripcion.trim()) {
-      Alert.alert(t('profile.error'), t('profile.fill_fields'));
-      return;
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      
+      // Obtener el userId de AsyncStorage
+      const storedUserId = await AsyncStorage.getItem('userId');
+      
+      if (!storedUserId) {
+        Alert.alert(t('profile.error'), 'No se encontró el ID de usuario');
+        setLoading(false);
+        return;
+      }
+
+      setUserId(storedUserId);
+      console.log("📱 UserId recuperado:", storedUserId);
+
+      // Obtener datos del usuario desde Firebase
+      const userRef = ref(db, `users/${storedUserId}`);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        console.log("✅ Datos del usuario cargados:", userData);
+
+        // Actualizar los estados con los datos del usuario
+        setNombre(userData.name || '');
+        setEmail(userData.email || '');
+        setTelefono(userData.phone || '');
+        setNoControl(userData.control || '');
+        setCarrera(userData.career || '');
+        setUbicacion(userData.location || '');
+      } else {
+        console.log("❌ No se encontraron datos del usuario");
+        Alert.alert(t('profile.error'), 'No se encontraron datos del usuario');
+      }
+    } catch (error) {
+      console.error("❌ Error al cargar datos:", error);
+      Alert.alert(t('profile.error'), 'Error al cargar los datos del perfil');
+    } finally {
+      setLoading(false);
     }
-
-    Alert.alert(t('profile.success'), t('profile.message_sent'));
-    setAsunto('');
-    setDescripcion('');
-    setHelpModalVisible(false);
   };
 
-  const handleChangePassword = () => {
+  const handleSaveProfile = async () => {
+    try {
+      if (!userId) {
+        Alert.alert(t('profile.error'), 'No se puede actualizar el perfil');
+        return;
+      }
+
+      setLoading(true);
+
+      // Actualizar datos en Firebase
+      const userRef = ref(db, `users/${userId}`);
+      
+      await update(userRef, {
+        name: nombre,
+        email: email,
+        phone: telefono,
+        control: noControl,
+        career: carrera,
+        location: ubicacion,
+      });
+
+      console.log("✅ Perfil actualizado exitosamente");
+      Alert.alert(t('profile.success'), t('profile.profile_updated'));
+      setEditModalVisible(false);
+    } catch (error) {
+      console.error("❌ Error al actualizar perfil:", error);
+      Alert.alert(t('profile.error'), 'Error al actualizar el perfil');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert(t('profile.error'), t('profile.fill_fields'));
       return;
@@ -87,23 +149,74 @@ export default function ProfileScreen() {
       return;
     }
 
-    Alert.alert(t('profile.success'), t('profile.password_changed'));
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setPasswordModalVisible(false);
+    try {
+      setLoading(true);
+
+      // Verificar contraseña actual
+      const userRef = ref(db, `users/${userId}`);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        
+        if (userData.password !== currentPassword) {
+          Alert.alert(t('profile.error'), 'La contraseña actual es incorrecta');
+          setLoading(false);
+          return;
+        }
+
+        // Actualizar contraseña
+        await update(userRef, {
+          password: newPassword,
+        });
+
+        Alert.alert(t('profile.success'), t('profile.password_changed'));
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordModalVisible(false);
+      }
+    } catch (error) {
+      console.error("❌ Error al cambiar contraseña:", error);
+      Alert.alert(t('profile.error'), 'Error al cambiar la contraseña');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
       t('profile.logout_title'),
       t('profile.logout_message'),
       [
         { text: t('profile.cancel'), style: 'cancel' },
-        { text: t('profile.logout'), onPress: () => console.log('Logout') },
+        { 
+          text: t('profile.logout'), 
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('userId');
+              console.log('✅ Sesión cerrada');
+              // Navegar a la pantalla de login
+              // navigation.navigate('Login');
+            } catch (error) {
+              console.error('❌ Error al cerrar sesión:', error);
+            }
+          }
+        },
       ]
     );
   };
+
+  if (loading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+          Cargando perfil...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <>
@@ -129,14 +242,14 @@ export default function ProfileScreen() {
 
         {/* Información principal */}
         <View style={styles.mainInfo}>
-          <Text style={[styles.name, { color: theme.colors.text }]}>{nombre}</Text>
+          <Text style={[styles.name, { color: theme.colors.text }]}>{nombre || 'Usuario'}</Text>
           <View style={styles.infoRow}>
             <Mail size={16} color={theme.colors.textSecondary} />
-            <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{email}</Text>
+            <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{email || 'Sin email'}</Text>
           </View>
           <View style={styles.infoRow}>
             <Phone size={16} color={theme.colors.textSecondary} />
-            <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{telefono}</Text>
+            <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{telefono || 'Sin teléfono'}</Text>
           </View>
         </View>
 
@@ -148,7 +261,7 @@ export default function ProfileScreen() {
             <BookOpen size={20} color={theme.colors.primary} />
             <View style={styles.dataContent}>
               <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{t('profile.control_number').toUpperCase()}</Text>
-              <Text style={[styles.value, { color: theme.colors.text }]}>{noControl}</Text>
+              <Text style={[styles.value, { color: theme.colors.text }]}>{noControl || 'N/A'}</Text>
             </View>
           </View>
 
@@ -156,7 +269,7 @@ export default function ProfileScreen() {
             <BookOpen size={20} color={theme.colors.primary} />
             <View style={styles.dataContent}>
               <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{t('profile.career').toUpperCase()}</Text>
-              <Text style={[styles.value, { color: theme.colors.text }]}>{carrera}</Text>
+              <Text style={[styles.value, { color: theme.colors.text }]}>{carrera || 'N/A'}</Text>
             </View>
           </View>
 
@@ -164,7 +277,7 @@ export default function ProfileScreen() {
             <MapPin size={20} color={theme.colors.primary} />
             <View style={styles.dataContent}>
               <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{t('profile.location').toUpperCase()}</Text>
-              <Text style={[styles.value, { color: theme.colors.text }]}>{ubicacion}</Text>
+              <Text style={[styles.value, { color: theme.colors.text }]}>{ubicacion || 'N/A'}</Text>
             </View>
           </View>
         </View>
@@ -333,7 +446,6 @@ export default function ProfileScreen() {
             </View>
 
             {/* Información Personal */}
-
             <View style={[styles.formSection, { backgroundColor: theme.colors.surface }]}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('profile.personal_info')}</Text>
               
@@ -342,10 +454,10 @@ export default function ProfileScreen() {
                 style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={nombre}
                 onChangeText={setNombre}
-
                 placeholder="Nombre completo"
                 placeholderTextColor={theme.colors.textSecondary}
               />
+              
               <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.email_label')}</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
@@ -381,7 +493,6 @@ export default function ProfileScreen() {
               />
 
               <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.career_label')}</Text>
-
               <TextInput
                 style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={carrera}
@@ -507,6 +618,7 @@ export default function ProfileScreen() {
                     )}
                   </TouchableOpacity>
                 </View>
+                
                 <TouchableOpacity 
                   style={[styles.updatePasswordButton, { backgroundColor: theme.colors.primary }]}
                   onPress={handleChangePassword}
@@ -514,6 +626,7 @@ export default function ProfileScreen() {
                   <Text style={styles.updatePasswordText}>{t('profile.update_password')}</Text>
                 </TouchableOpacity>
               </View>
+              
               <View style={[styles.passwordTips, { backgroundColor: theme.colors.surfaceVariant }]}>
                 <Text style={[styles.tipsTitle, { color: theme.colors.text }]}>{t('profile.security_tips')}</Text>
                 <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>{t('profile.tip_min_chars')}</Text>
@@ -525,78 +638,6 @@ export default function ProfileScreen() {
           </ScrollView>
         </View>
       </Modal>
-
-      {/* Modal de Ayuda */}
-      {/* <Modal
-        animationType="slide"
-        transparent={false}
-        visible={helpModalVisible}
-        onRequestClose={() => setHelpModalVisible(false)}
-      >
-        <View style={styles.editContainer}>
-          <View style={styles.editHeader}>
-            <TouchableOpacity onPress={() => setHelpModalVisible(false)}>
-              <X size={24} color="#1f2937" />
-            </TouchableOpacity>
-            <Text style={styles.editTitle}>{t('profile.help_support')}</Text>
-            <View style={{ width: 24 }} />
-          </View>
-
-          <ScrollView style={styles.editForm}>
-            <View style={styles.helpContent}>
-              <View style={styles.helpIconContainer}>
-                <HelpCircle size={48} color="#16a34a" />
-              </View>
-
-              <Text style={styles.helpDescription}>
-                ¿Necesitas ayuda? Envíanos un mensaje y nuestro equipo de soporte te responderá lo antes posible.
-              </Text>
-
-              <View style={styles.helpForm}>
-                <Text style={styles.inputLabel}>Asunto</Text>
-                <TextInput
-                  style={styles.input}
-                  value={asunto}
-                  onChangeText={setAsunto}
-                  placeholder="Ej: Problema con mi cuenta"
-                  placeholderTextColor="#9ca3af"
-                />
-
-                <Text style={styles.inputLabel}>Descripción</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={descripcion}
-                  onChangeText={setDescripcion}
-                  placeholder="Describe tu problema o pregunta en detalle..."
-                  placeholderTextColor="#9ca3af"
-                  multiline
-                  numberOfLines={6}
-                  textAlignVertical="top"
-                />
-
-                <TouchableOpacity
-                  style={styles.sendButton}
-                  onPress={handleSendHelp}
-                >
-                  <Text style={styles.sendButtonText}>Enviar Mensaje</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactTitle}>Otras formas de contacto</Text>
-                <View style={styles.contactItem}>
-                  <Mail size={20} color="#6b7280" />
-                  <Text style={styles.contactText}>soporte@ejemplo.com</Text>
-                </View>
-                <View style={styles.contactItem}>
-                  <Phone size={20} color="#6b7280" />
-                  <Text style={styles.contactText}>+52 449 123 4567</Text>
-                </View>
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      </Modal> */}
     </>
   );
 }

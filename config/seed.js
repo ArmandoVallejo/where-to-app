@@ -1,4 +1,4 @@
- import { db } from "../config/config";
+import { db } from "../config/config";
 import { ref, push, set, get } from "firebase/database";
 
 export async function runSeed() {
@@ -22,7 +22,7 @@ export async function runSeed() {
 
     const edificiosRef = ref(db, "edificios");
     console.log("📍 Creando edificios...");
-    
+
     for (const edificio of edificios) {
       await push(edificiosRef, edificio);
       console.log(`  ✅ Edificio creado: ${edificio.name}`);
@@ -30,11 +30,16 @@ export async function runSeed() {
 
     // Usuario administrador
     const adminUser = {
+      name: "Juan Chavez",
       control: "11111111",
       email: "admin@tec.mx",
       password: "Hola1234#",
+      phone: "4491231234",
+      location: "Aguascalientes",
+      career: "TICS",
       role: "admin",
-      createdAt: new Date().toISOString()
+      historialEventos: [],
+      createdAt: new Date().toISOString(),
     };
 
     const usersRef = ref(db, "users");
@@ -50,5 +55,3 @@ export async function runSeed() {
     console.error("❌ Error en seed:", e);
   }
 }
-
-export const SEED_VERSION = "1";
