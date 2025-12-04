@@ -38,7 +38,7 @@ export async function runSeed() {
       location: "Aguascalientes",
       career: "TICS",
       role: "admin",
-      historialEventos: [],
+      historialEventos: "",
       createdAt: new Date().toISOString(),
     };
 
