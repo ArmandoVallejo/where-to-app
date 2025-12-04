@@ -2,19 +2,24 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from 'react-native-paper'; // ← 🔹 usamos botón Material
+import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 export default function Lugares({ navigation }) {
+  const { theme } = useTheme();
+  const { t } = useTranslation();
+
   const [lugares, setLugares] = useState([
-    { id: 1, nombre: 'Sala Audiovisual', favorito: false, tipo: 'audiovisual' },
-    { id: 2, nombre: 'Salón Cultural, Música, Baile', favorito: false, tipo: 'cultural' },
-    { id: 3, nombre: 'Unidad de Posgrado e Investigación', favorito: false, tipo: 'posgrado' },
-    { id: 4, nombre: 'Centro de Idiomas', favorito: false, tipo: 'idiomas' },
-    { id: 5, nombre: 'Departamento de Ciencias Básicas', favorito: false, tipo: 'basicas' },
-    { id: 6, nombre: 'Gimnasio Auditorio', favorito: false, tipo: 'auditorio' },
-    { id: 7, nombre: 'Alberca Semiolímpica', favorito: false, tipo: 'alberca' },
-    { id: 8, nombre: 'Campo de Futbol, Pista de Atletismo', favorito: false, tipo: 'futbol' },
-    { id: 9, nombre: 'Campo de Beisbol', favorito: false, tipo: 'beisbol' },
-    { id: 10, nombre: 'Departamento de Sistemas Computacionales', favorito: false, tipo: 'sistemas' },
+    { id: 1, nombre: t('places.audiovisual_room'), favorito: false, tipo: 'audiovisual' },
+    { id: 2, nombre: t('places.cultural_hall'), favorito: false, tipo: 'cultural' },
+    { id: 3, nombre: t('places.postgrad_unit'), favorito: false, tipo: 'posgrado' },
+    { id: 4, nombre: t('places.language_center'), favorito: false, tipo: 'idiomas' },
+    { id: 5, nombre: t('places.basic_sciences'), favorito: false, tipo: 'basicas' },
+    { id: 6, nombre: t('places.auditorium_gym'), favorito: false, tipo: 'auditorio' },
+    { id: 7, nombre: t('places.pool'), favorito: false, tipo: 'alberca' },
+    { id: 8, nombre: t('places.soccer_field'), favorito: false, tipo: 'futbol' },
+    { id: 9, nombre: t('places.baseball_field'), favorito: false, tipo: 'beisbol' },
+    { id: 10, nombre: t('places.computer_systems'), favorito: false, tipo: 'sistemas' },
   ]);
 
   const toggleFavorito = (id) => {
@@ -32,59 +37,63 @@ export default function Lugares({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.dark ? theme.colors.surface : '#EDE3F7' }]}>
         <Text style={styles.headerIcon}>📱</Text>
-        <Text style={styles.headerTitle}>Lugares</Text>
-      </View>
+        <Text style={[styles.headerTitle, { color: theme.colors.primary }]}>{t('places.title')}</Text>
+      </View >
 
       {/* Lista de lugares */}
-      <ScrollView
+      < ScrollView
         style={styles.scrollContainer}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 120 }
+        }
         showsVerticalScrollIndicator={false}
       >
-        {lugaresMostrados.map((lugar) => (
-          <View key={lugar.id} style={styles.lugarContainer}>
-            {/* Botón principal */}
-            <TouchableOpacity
-              style={[
-                styles.lugarButton,
-                lugar.favorito && styles.lugarFavorito,
-              ]}
-              onPress={() => navigation.navigate('Home', { tipo: lugar.tipo })}
-            >
-              <View style={styles.circle} />
-              <Text style={styles.lugarText}>{lugar.nombre}</Text>
-            </TouchableOpacity>
+        {
+          lugaresMostrados.map((lugar) => (
+            <View key={lugar.id} style={styles.lugarContainer}>
+              {/* Botón principal */}
+              <TouchableOpacity
+                style={[
+                  styles.lugarButton,
+                  { backgroundColor: theme.colors.surface },
+                  lugar.favorito && [styles.lugarFavorito, { backgroundColor: theme.dark ? theme.colors.surfaceVariant : '#FFF9E6' }],
+                ]}
+                onPress={() => navigation.navigate('Home', { tipo: lugar.tipo })}
+              >
+                <View style={[styles.circle, { backgroundColor: theme.dark ? theme.colors.primary : '#D8C7F9' }]} />
+                <Text style={[styles.lugarText, { color: theme.colors.text }]}>{lugar.nombre}</Text>
+              </TouchableOpacity>
 
-            {/* Botón de favorito */}
-            <TouchableOpacity onPress={() => toggleFavorito(lugar.id)} style={styles.starButton}>
-              <MaterialCommunityIcons
-                name={lugar.favorito ? 'star' : 'star-outline'}
-                size={22}
-                color={lugar.favorito ? '#FFD700' : '#4A3B75'}
-              />
-            </TouchableOpacity>
-          </View>
-        ))}
-      </ScrollView>
+              {/* Botón de favorito */}
+              <TouchableOpacity onPress={() => toggleFavorito(lugar.id)} style={styles.starButton}>
+                <MaterialCommunityIcons
+                  name={lugar.favorito ? 'star' : 'star-outline'}
+                  size={22}
+                  color={lugar.favorito ? '#FFD700' : theme.colors.primary}
+                />
+              </TouchableOpacity>
+            </View>
+          ))
+        }
+      </ScrollView >
 
       {/* Footer - Botón Material */}
-      <View style={styles.footer}>
+      < View style={styles.footer} >
         <Button
           mode="contained-tonal"
           icon="map-marker"
           onPress={handleUbicacionActual}
           contentStyle={{ flexDirection: 'row-reverse' }} // icono a la izquierda
-          style={styles.locationButton}
-          labelStyle={styles.locationText}
+          style={[styles.locationButton, { backgroundColor: theme.dark ? theme.colors.surface : '#EDE3F7' }]}
+          labelStyle={[styles.locationText, { color: theme.colors.primary }]}
         >
-          Ubicación actual
+          {t('places.current_location')}
         </Button>
-      </View>
-    </View>
+      </View >
+    </View >
   );
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,23 +8,27 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { User, Mail, Phone, BookOpen, MapPin, Globe, Palette, HelpCircle, LogOut, Edit, X, Check, Eye, EyeOff, Lock } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ref, get, update } from 'firebase/database';
+import { db } from '../config/config';
 
 export default function ProfileScreen() {
+  const navigation = useNavigation();
+  const { theme, isDarkMode, setTheme: setAppTheme } = useTheme();
+  const { t, i18n } = useTranslation();
+
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [themeModalVisible, setThemeModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [helpModalVisible, setHelpModalVisible] = useState(false);
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
-  
-  const [selectedLanguage, setSelectedLanguage] = useState('Español');
-  const [selectedTheme, setSelectedTheme] = useState('Claro');
-  
-  // Estados para el formulario de ayuda
-  const [asunto, setAsunto] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  
+  const [loading, setLoading] = useState(true);
+
   // Estados para cambio de contraseña
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -32,74 +36,193 @@ export default function ProfileScreen() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Estados para el perfil del usuario
+  const [userId, setUserId] = useState(null);
+  const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [noControl, setNoControl] = useState('');
+  const [carrera, setCarrera] = useState('');
+  const [ubicacion, setUbicacion] = useState('');
   
-  // Estados para editar perfil
-  const [nombre, setNombre] = useState('Juan Pérez García');
-  const [email, setEmail] = useState('juan.perez@ejemplo.com');
-  const [telefono, setTelefono] = useState('+52 449 123 4567');
-  const [noControl, setNoControl] = useState('20240123');
-  const [carrera, setCarrera] = useState('Ingeniería en Sistemas Computacionales');
-  const [ubicacion, setUbicacion] = useState('Aguascalientes, México');
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language === 'es' ? 'Español' : 'English');
+  const selectedTheme = isDarkMode ? 'Oscuro' : 'Claro';
 
-  const languages = ['Español', 'English', 'Français', 'Deutsch', 'Português'];
-  const themes = ['Claro', 'Oscuro', 'Automático'];
+  // const languages = ['Español', 'English', 'Français', 'Deutsch', 'Português'];
+  const languages = ['Español', 'English'];
+  const themes = ['Claro', 'Oscuro'];
 
-  const handleSaveProfile = () => {
-    Alert.alert('Éxito', 'Perfil actualizado correctamente');
-    setEditModalVisible(false);
-  };
+  // Cargar datos del usuario desde Firebase
+  useEffect(() => {
+    loadUserData();
+  }, []);
 
-  const handleSendHelp = () => {
-    if (!asunto.trim() || !descripcion.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
-      return;
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      
+      // Obtener el userId de AsyncStorage
+      const storedUserId = await AsyncStorage.getItem('userId');
+      
+      if (!storedUserId) {
+        Alert.alert(t('profile.error'), 'No se encontró el ID de usuario');
+        setLoading(false);
+        return;
+      }
+
+      setUserId(storedUserId);
+      console.log("📱 UserId recuperado:", storedUserId);
+
+      // Obtener datos del usuario desde Firebase
+      const userRef = ref(db, `users/${storedUserId}`);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        console.log("✅ Datos del usuario cargados:", userData);
+
+        // Actualizar los estados con los datos del usuario
+        setNombre(userData.name || '');
+        setEmail(userData.email || '');
+        setTelefono(userData.phone || '');
+        setNoControl(userData.control || '');
+        setCarrera(userData.career || '');
+        setUbicacion(userData.location || '');
+      } else {
+        console.log("❌ No se encontraron datos del usuario");
+        Alert.alert(t('profile.error'), 'No se encontraron datos del usuario');
+      }
+    } catch (error) {
+      console.error("❌ Error al cargar datos:", error);
+      Alert.alert(t('profile.error'), 'Error al cargar los datos del perfil');
+    } finally {
+      setLoading(false);
     }
-    
-    Alert.alert('Éxito', 'Tu mensaje ha sido enviado. Nos pondremos en contacto contigo pronto.');
-    setAsunto('');
-    setDescripcion('');
-    setHelpModalVisible(false);
   };
 
-  const handleChangePassword = () => {
+  const handleSaveProfile = async () => {
+    try {
+      if (!userId) {
+        Alert.alert(t('profile.error'), 'No se puede actualizar el perfil');
+        return;
+      }
+
+      setLoading(true);
+
+      // Actualizar datos en Firebase
+      const userRef = ref(db, `users/${userId}`);
+      
+      await update(userRef, {
+        name: nombre,
+        email: email,
+        phone: telefono,
+        control: noControl,
+        career: carrera,
+        location: ubicacion,
+      });
+
+      console.log("✅ Perfil actualizado exitosamente");
+      Alert.alert(t('profile.success'), t('profile.profile_updated'));
+      setEditModalVisible(false);
+    } catch (error) {
+      console.error("❌ Error al actualizar perfil:", error);
+      Alert.alert(t('profile.error'), 'Error al actualizar el perfil');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+      Alert.alert(t('profile.error'), t('profile.fill_fields'));
       return;
     }
-    
+
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'La nueva contraseña debe tener al menos 6 caracteres');
+      Alert.alert(t('profile.error'), t('profile.password_min_length'));
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden');
+      Alert.alert(t('profile.error'), t('profile.passwords_mismatch'));
       return;
     }
-    
-    Alert.alert('Éxito', 'Contraseña cambiada exitosamente');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setPasswordModalVisible(false);
+
+    try {
+      setLoading(true);
+
+      // Verificar contraseña actual
+      const userRef = ref(db, `users/${userId}`);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
+        
+        if (userData.password !== currentPassword) {
+          Alert.alert(t('profile.error'), 'La contraseña actual es incorrecta');
+          setLoading(false);
+          return;
+        }
+
+        // Actualizar contraseña
+        await update(userRef, {
+          password: newPassword,
+        });
+
+        Alert.alert(t('profile.success'), t('profile.password_changed'));
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordModalVisible(false);
+      }
+    } catch (error) {
+      console.error("❌ Error al cambiar contraseña:", error);
+      Alert.alert(t('profile.error'), 'Error al cambiar la contraseña');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro de que deseas cerrar sesión?',
+      t('profile.logout_title'),
+      t('profile.logout_message'),
       [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Cerrar Sesión', onPress: () => console.log('Logout') },
+        { text: t('profile.cancel'), style: 'cancel' },
+        { 
+          text: t('profile.logout'), 
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('userId');
+              console.log('✅ Sesión cerrada');
+              // Navegar a la pantalla de login
+              // navigation.navigate('Login');
+            } catch (error) {
+              console.error('❌ Error al cerrar sesión:', error);
+            }
+          }
+        },
       ]
     );
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+          Cargando perfil...
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <>
-      <ScrollView style={styles.container}>
+      <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {/* Header con botón de editar */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
           <TouchableOpacity 
             style={styles.editButton}
             onPress={() => setEditModalVisible(true)}
@@ -110,111 +233,111 @@ export default function ProfileScreen() {
 
         {/* Avatar */}
         <View style={styles.avatarContainer}>
-          <View style={styles.avatarWhiteBorder}>
-            <View style={styles.avatar}>
-              <User size={64} color="#3b82f6" />
+          <View style={[styles.avatarWhiteBorder, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.avatar, { backgroundColor: theme.dark ? '#1e3a8a' : '#dbeafe' }]}>
+              <User size={64} color={theme.colors.primary} />
             </View>
           </View>
         </View>
 
         {/* Información principal */}
         <View style={styles.mainInfo}>
-          <Text style={styles.name}>{nombre}</Text>
+          <Text style={[styles.name, { color: theme.colors.text }]}>{nombre || 'Usuario'}</Text>
           <View style={styles.infoRow}>
-            <Mail size={16} color="#6b7280" />
-            <Text style={styles.infoText}>{email}</Text>
+            <Mail size={16} color={theme.colors.textSecondary} />
+            <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{email || 'Sin email'}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Phone size={16} color="#6b7280" />
-            <Text style={styles.infoText}>{telefono}</Text>
+            <Phone size={16} color={theme.colors.textSecondary} />
+            <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{telefono || 'Sin teléfono'}</Text>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
         {/* Información académica */}
         <View style={styles.section}>
           <View style={styles.dataRow}>
-            <BookOpen size={20} color="#3b82f6" />
+            <BookOpen size={20} color={theme.colors.primary} />
             <View style={styles.dataContent}>
-              <Text style={styles.label}>NO. CONTROL</Text>
-              <Text style={styles.value}>{noControl}</Text>
+              <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{t('profile.control_number').toUpperCase()}</Text>
+              <Text style={[styles.value, { color: theme.colors.text }]}>{noControl || 'N/A'}</Text>
             </View>
           </View>
-          
+
           <View style={styles.dataRow}>
-            <BookOpen size={20} color="#3b82f6" />
+            <BookOpen size={20} color={theme.colors.primary} />
             <View style={styles.dataContent}>
-              <Text style={styles.label}>CARRERA</Text>
-              <Text style={styles.value}>{carrera}</Text>
+              <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{t('profile.career').toUpperCase()}</Text>
+              <Text style={[styles.value, { color: theme.colors.text }]}>{carrera || 'N/A'}</Text>
             </View>
           </View>
-          
+
           <View style={styles.dataRow}>
-            <MapPin size={20} color="#3b82f6" />
+            <MapPin size={20} color={theme.colors.primary} />
             <View style={styles.dataContent}>
-              <Text style={styles.label}>UBICACIÓN</Text>
-              <Text style={styles.value}>{ubicacion}</Text>
+              <Text style={[styles.label, { color: theme.colors.textSecondary }]}>{t('profile.location').toUpperCase()}</Text>
+              <Text style={[styles.value, { color: theme.colors.text }]}>{ubicacion || 'N/A'}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
         {/* Opciones de configuración */}
         <View style={styles.section}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={() => setLanguageModalVisible(true)}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#dbeafe' }]}>
-              <Globe size={24} color="#3b82f6" />
+            <View style={[styles.iconContainer, { backgroundColor: theme.dark ? '#1e3a8a' : '#dbeafe' }]}>
+              <Globe size={24} color={theme.colors.primary} />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={styles.menuText}>Idiomas</Text>
-              <Text style={styles.menuSubtext}>{selectedLanguage}</Text>
+              <Text style={[styles.menuText, { color: theme.colors.text }]}>{t('profile.language')}</Text>
+              <Text style={[styles.menuSubtext, { color: theme.colors.textSecondary }]}>{selectedLanguage}</Text>
             </View>
-            <Text style={styles.arrow}>›</Text>
+            <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={() => setThemeModalVisible(true)}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#f3e8ff' }]}>
-              <Palette size={24} color="#9333ea" />
+            <View style={[styles.iconContainer, { backgroundColor: theme.dark ? '#4C1D95' : '#f3e8ff' }]}>
+              <Palette size={24} color={theme.colors.secondary} />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={styles.menuText}>Tema</Text>
-              <Text style={styles.menuSubtext}>{selectedTheme}</Text>
+              <Text style={[styles.menuText, { color: theme.colors.text }]}>{t('profile.theme')}</Text>
+              <Text style={[styles.menuSubtext, { color: theme.colors.textSecondary }]}>{selectedTheme}</Text>
             </View>
-            <Text style={styles.arrow}>›</Text>
+            <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
         {/* Opciones finales */}
         <View style={[styles.section, { marginBottom: 32 }]}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => setHelpModalVisible(true)}
+            onPress={() => navigation.navigate('Help')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#dcfce7' }]}>
-              <HelpCircle size={24} color="#16a34a" />
+            <View style={[styles.iconContainer, { backgroundColor: theme.dark ? '#14532d' : '#dcfce7' }]}>
+              <HelpCircle size={24} color={theme.colors.success} />
             </View>
-            <Text style={styles.menuText}>Ayuda {" "}</Text>
-            <Text style={styles.arrow}>›</Text>
+            <Text style={[styles.menuText, { color: theme.colors.text }]}>{t('profile.help')} {" "}</Text>
+            <Text style={[styles.arrow, { color: theme.colors.textSecondary }]}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.menuItem}
             onPress={handleLogout}
           >
-            <View style={[styles.iconContainer, { backgroundColor: '#fee2e2' }]}>
-              <LogOut size={24} color="#dc2626" />
+            <View style={[styles.iconContainer, { backgroundColor: theme.dark ? '#7f1d1d' : '#fee2e2' }]}>
+              <LogOut size={24} color={theme.colors.error} />
             </View>
-            <Text style={[styles.menuText, { color: '#dc2626' }]}>Cerrar Sesión</Text>
+            <Text style={[styles.menuText, { color: theme.colors.error }]}>{t('profile.logout')}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -227,26 +350,31 @@ export default function ProfileScreen() {
         onRequestClose={() => setLanguageModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Seleccionar Idioma</Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}>
+              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{t('profile.select_language')}</Text>
               <TouchableOpacity onPress={() => setLanguageModalVisible(false)}>
-                <X size={24} color="#6b7280" />
+                <X size={24} color={theme.colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            
+
             {languages.map((lang) => (
               <TouchableOpacity
                 key={lang}
                 style={styles.modalOption}
                 onPress={() => {
+                  if (lang === 'Español') {
+                    i18n.changeLanguage('es');
+                  } else if (lang === 'English') {
+                    i18n.changeLanguage('en');
+                  }
                   setSelectedLanguage(lang);
                   setLanguageModalVisible(false);
                 }}
               >
-                <Text style={styles.modalOptionText}>{lang}</Text>
+                <Text style={[styles.modalOptionText, { color: theme.colors.text }]}>{lang}</Text>
                 {selectedLanguage === lang && (
-                  <Check size={20} color="#3b82f6" />
+                  <Check size={20} color={theme.colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -262,26 +390,25 @@ export default function ProfileScreen() {
         onRequestClose={() => setThemeModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Seleccionar Tema</Text>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}>
+              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>{t('profile.select_theme')}</Text>
               <TouchableOpacity onPress={() => setThemeModalVisible(false)}>
-                <X size={24} color="#6b7280" />
+                <X size={24} color={theme.colors.textSecondary} />
               </TouchableOpacity>
-            </View>
-            
-            {themes.map((theme) => (
+            </View>         
+            {themes.map((themeOption) => (
               <TouchableOpacity
-                key={theme}
+                key={themeOption}
                 style={styles.modalOption}
                 onPress={() => {
-                  setSelectedTheme(theme);
+                  setAppTheme(themeOption);
                   setThemeModalVisible(false);
                 }}
               >
-                <Text style={styles.modalOptionText}>{theme}</Text>
-                {selectedTheme === theme && (
-                  <Check size={20} color="#9333ea" />
+                <Text style={[styles.modalOptionText, { color: theme.colors.text }]}>{themeOption}</Text>
+                {selectedTheme === themeOption && (
+                  <Check size={20} color={theme.colors.secondary} />
                 )}
               </TouchableOpacity>
             ))}
@@ -296,97 +423,103 @@ export default function ProfileScreen() {
         visible={editModalVisible}
         onRequestClose={() => setEditModalVisible(false)}
       >
-        <View style={styles.editContainer}>
-          <View style={styles.editHeader}>
+        <View style={[styles.editContainer, { backgroundColor: theme.colors.background }]}>
+          <View style={[styles.editHeader, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-              <X size={24} color="#1f2937" />
+              <X size={24} color={theme.colors.text} />
             </TouchableOpacity>
-            <Text style={styles.editTitle}>Editar Perfil</Text>
+            <Text style={[styles.editTitle, { color: theme.colors.text }]}>{t('profile.edit_profile')}</Text>
             <TouchableOpacity onPress={handleSaveProfile}>
-              <Text style={styles.saveButton}>Guardar</Text>
+              <Text style={[styles.saveButton, { color: theme.colors.primary }]}>{t('profile.save')}</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.editForm}>
             {/* Avatar editable */}
-            <View style={styles.editAvatarContainer}>
-              <View style={styles.editAvatar}>
-                <User size={64} color="#3b82f6" />
+            <View style={[styles.editAvatarContainer, { backgroundColor: theme.colors.surface }]}>
+              <View style={[styles.editAvatar, { backgroundColor: theme.dark ? '#1e3a8a' : '#dbeafe' }]}>
+                <User size={64} color={theme.colors.primary} />
               </View>
               <TouchableOpacity style={styles.changePhotoButton}>
-                <Text style={styles.changePhotoText}>Cambiar foto</Text>
+                <Text style={[styles.changePhotoText, { color: theme.colors.primary }]}>{t('profile.change_photo')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Información Personal */}
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Información Personal</Text>
+            <View style={[styles.formSection, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('profile.personal_info')}</Text>
               
-              <Text style={styles.inputLabel}>Nombre Completo</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.full_name')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={nombre}
                 onChangeText={setNombre}
                 placeholder="Nombre completo"
+                placeholderTextColor={theme.colors.textSecondary}
               />
-
-              <Text style={styles.inputLabel}>Correo Electrónico</Text>
+              
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.email_label')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="correo@ejemplo.com"
+                placeholder={t('profile.email_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
                 keyboardType="email-address"
               />
 
-              <Text style={styles.inputLabel}>Teléfono</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.phone_label')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={telefono}
                 onChangeText={setTelefono}
-                placeholder="+52 449 123 4567"
+                placeholder={t('profile.phone_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
                 keyboardType="phone-pad"
               />
             </View>
 
             {/* Información Académica */}
-            <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Información Académica</Text>
+            <View style={[styles.formSection, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('profile.academic_info')}</Text>
               
-              <Text style={styles.inputLabel}>No. Control</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.control_number_label')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={noControl}
                 onChangeText={setNoControl}
-                placeholder="20240123"
+                placeholder={t('profile.control_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
               />
 
-              <Text style={styles.inputLabel}>Carrera</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.career_label')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={carrera}
                 onChangeText={setCarrera}
-                placeholder="Tu carrera"
+                placeholder={t('profile.career_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
                 multiline
               />
 
-              <Text style={styles.inputLabel}>Ubicación</Text>
+              <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.location_label')}</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.text, borderColor: theme.colors.border }]}
                 value={ubicacion}
                 onChangeText={setUbicacion}
-                placeholder="Ciudad, País"
+                placeholder={t('profile.location_placeholder')}
+                placeholderTextColor={theme.colors.textSecondary}
               />
             </View>
 
             {/* Botón Cambiar Contraseña */}
-            <View style={styles.formSection}>
+            <View style={[styles.formSection, { backgroundColor: theme.colors.surface }]}>
               <TouchableOpacity 
-                style={styles.changePasswordButton}
+                style={[styles.changePasswordButton, { backgroundColor: theme.dark ? '#1e3a8a' : '#eff6ff', borderColor: theme.colors.primary }]}
                 onPress={() => setPasswordModalVisible(true)}
               >
-                <Lock size={20} color="#2563eb" />
-                <Text style={styles.changePasswordText}>Cambiar Contraseña</Text>
+                <Lock size={20} color={theme.colors.primary} />
+                <Text style={[styles.changePasswordText, { color: theme.colors.primary }]}>{t('profile.change_password')}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -400,178 +533,106 @@ export default function ProfileScreen() {
         visible={passwordModalVisible}
         onRequestClose={() => setPasswordModalVisible(false)}
       >
-        <View style={styles.editContainer}>
-          <View style={styles.editHeader}>
+        <View style={[styles.editContainer, { backgroundColor: theme.colors.background }]}>
+          <View style={[styles.editHeader, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
             <TouchableOpacity onPress={() => setPasswordModalVisible(false)}>
-              <X size={24} color="#1f2937" />
+              <X size={24} color={theme.colors.text} />
             </TouchableOpacity>
-            <Text style={styles.editTitle}>Cambiar Contraseña</Text>
+            <Text style={[styles.editTitle, { color: theme.colors.text }]}>{t('profile.change_password')}</Text>
             <View style={{ width: 24 }} />
           </View>
 
           <ScrollView style={styles.editForm}>
             <View style={styles.passwordContent}>
               <View style={styles.passwordIconContainer}>
-                <Lock size={48} color="#2563eb" />
+                <Lock size={48} color={theme.colors.primary} />
               </View>
               
-              <Text style={styles.passwordDescription}>
-                Asegúrate de que tu nueva contraseña tenga al menos 6 caracteres para mantener tu cuenta segura.
+              <Text style={[styles.passwordDescription, { color: theme.colors.textSecondary }]}>
+                {t('profile.password_security_info')}
               </Text>
 
               <View style={styles.passwordForm}>
-                <Text style={styles.inputLabel}>Contraseña Actual</Text>
-                <View style={styles.passwordInputContainer}>
+                <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.current_password')}</Text>
+                <View style={[styles.passwordInputContainer, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.border }]}>
                   <TextInput
-                    style={styles.passwordInput}
+                    style={[styles.passwordInput, { color: theme.colors.text }]}
                     value={currentPassword}
                     onChangeText={setCurrentPassword}
-                    placeholder="Ingresa tu contraseña actual"
-                    placeholderTextColor="#9ca3af"
+                    placeholder={t('profile.current_password_placeholder')}
+                    placeholderTextColor={theme.colors.textSecondary}
                     secureTextEntry={!showCurrentPassword}
                   />
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.eyeButton}
                     onPress={() => setShowCurrentPassword(!showCurrentPassword)}
                   >
                     {showCurrentPassword ? (
-                      <EyeOff size={20} color="#6b7280" />
+                      <EyeOff size={20} color={theme.colors.textSecondary} />
                     ) : (
-                      <Eye size={20} color="#6b7280" />
+                      <Eye size={20} color={theme.colors.textSecondary} />
                     )}
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.inputLabel}>Nueva Contraseña</Text>
-                <View style={styles.passwordInputContainer}>
+                <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.new_password')}</Text>
+                <View style={[styles.passwordInputContainer, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.border }]}>
                   <TextInput
-                    style={styles.passwordInput}
+                    style={[styles.passwordInput, { color: theme.colors.text }]}
                     value={newPassword}
                     onChangeText={setNewPassword}
-                    placeholder="Ingresa tu nueva contraseña"
-                    placeholderTextColor="#9ca3af"
+                    placeholder={t('profile.new_password_placeholder')}
+                    placeholderTextColor={theme.colors.textSecondary}
                     secureTextEntry={!showNewPassword}
                   />
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.eyeButton}
                     onPress={() => setShowNewPassword(!showNewPassword)}
                   >
                     {showNewPassword ? (
-                      <EyeOff size={20} color="#6b7280" />
+                      <EyeOff size={20} color={theme.colors.textSecondary} />
                     ) : (
-                      <Eye size={20} color="#6b7280" />
+                      <Eye size={20} color={theme.colors.textSecondary} />
                     )}
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.inputLabel}>Confirmar Nueva Contraseña</Text>
-                <View style={styles.passwordInputContainer}>
+                <Text style={[styles.inputLabel, { color: theme.colors.textSecondary }]}>{t('profile.confirm_password')}</Text>
+                <View style={[styles.passwordInputContainer, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.border }]}>
                   <TextInput
-                    style={styles.passwordInput}
+                    style={[styles.passwordInput, { color: theme.colors.text }]}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
-                    placeholder="Confirma tu nueva contraseña"
-                    placeholderTextColor="#9ca3af"
+                    placeholder={t('profile.confirm_password_placeholder')}
+                    placeholderTextColor={theme.colors.textSecondary}
                     secureTextEntry={!showConfirmPassword}
                   />
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.eyeButton}
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff size={20} color="#6b7280" />
+                      <EyeOff size={20} color={theme.colors.textSecondary} />
                     ) : (
-                      <Eye size={20} color="#6b7280" />
+                      <Eye size={20} color={theme.colors.textSecondary} />
                     )}
                   </TouchableOpacity>
                 </View>
-
+                
                 <TouchableOpacity 
-                  style={styles.updatePasswordButton}
+                  style={[styles.updatePasswordButton, { backgroundColor: theme.colors.primary }]}
                   onPress={handleChangePassword}
                 >
-                  <Text style={styles.updatePasswordText}>Actualizar Contraseña</Text>
+                  <Text style={styles.updatePasswordText}>{t('profile.update_password')}</Text>
                 </TouchableOpacity>
-              </View>
-
-              <View style={styles.passwordTips}>
-                <Text style={styles.tipsTitle}>Consejos de seguridad:</Text>
-                <Text style={styles.tipText}>• Usa al menos 6 caracteres</Text>
-                <Text style={styles.tipText}>• Combina letras, números y símbolos</Text>
-                <Text style={styles.tipText}>• No uses información personal</Text>
-                <Text style={styles.tipText}>• Evita contraseñas comunes</Text>
-              </View>
-            </View>
-          </ScrollView>
-        </View>
-      </Modal>
-
-      {/* Modal de Ayuda */}
-      <Modal
-        animationType="slide"
-        transparent={false}
-        visible={helpModalVisible}
-        onRequestClose={() => setHelpModalVisible(false)}
-      >
-        <View style={styles.editContainer}>
-          <View style={styles.editHeader}>
-            <TouchableOpacity onPress={() => setHelpModalVisible(false)}>
-              <X size={24} color="#1f2937" />
-            </TouchableOpacity>
-            <Text style={styles.editTitle}>Centro de Ayuda</Text>
-            <View style={{ width: 24 }} />
-          </View>
-
-          <ScrollView style={styles.editForm}>
-            <View style={styles.helpContent}>
-              <View style={styles.helpIconContainer}>
-                <HelpCircle size={48} color="#16a34a" />
               </View>
               
-              <Text style={styles.helpDescription}>
-                ¿Necesitas ayuda? Envíanos un mensaje y nuestro equipo de soporte te responderá lo antes posible.
-              </Text>
-
-              <View style={styles.helpForm}>
-                <Text style={styles.inputLabel}>Asunto</Text>
-                <TextInput
-                  style={styles.input}
-                  value={asunto}
-                  onChangeText={setAsunto}
-                  placeholder="Ej: Problema con mi cuenta"
-                  placeholderTextColor="#9ca3af"
-                />
-
-                <Text style={styles.inputLabel}>Descripción</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={descripcion}
-                  onChangeText={setDescripcion}
-                  placeholder="Describe tu problema o pregunta en detalle..."
-                  placeholderTextColor="#9ca3af"
-                  multiline
-                  numberOfLines={6}
-                  textAlignVertical="top"
-                />
-
-                <TouchableOpacity 
-                  style={styles.sendButton}
-                  onPress={handleSendHelp}
-                >
-                  <Text style={styles.sendButtonText}>Enviar Mensaje</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactTitle}>Otras formas de contacto</Text>
-                <View style={styles.contactItem}>
-                  <Mail size={20} color="#6b7280" />
-                  <Text style={styles.contactText}>soporte@ejemplo.com</Text>
-                </View>
-                <View style={styles.contactItem}>
-                  <Phone size={20} color="#6b7280" />
-                  <Text style={styles.contactText}>+52 449 123 4567</Text>
-                </View>
+              <View style={[styles.passwordTips, { backgroundColor: theme.colors.surfaceVariant }]}>
+                <Text style={[styles.tipsTitle, { color: theme.colors.text }]}>{t('profile.security_tips')}</Text>
+                <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>{t('profile.tip_min_chars')}</Text>
+                <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>{t('profile.tip_combine')}</Text>
+                <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>{t('profile.tip_no_personal')}</Text>
+                <Text style={[styles.tipText, { color: theme.colors.textSecondary }]}>{t('profile.tip_avoid_common')}</Text>
               </View>
             </View>
           </ScrollView>
