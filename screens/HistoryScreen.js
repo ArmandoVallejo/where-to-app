@@ -25,6 +25,8 @@ import {
   Chip,
 } from "react-native-paper";
 import { useTheme } from "../context/ThemeContext";
+import { RotateCcw, RotateCw } from "lucide-react-native";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 // Mock data for attended events history
 const ATTENDED_EVENTS = [
@@ -102,11 +104,25 @@ const groupEventsByLocation = (events) => {
   return grouped;
 };
 
-export default function HistoryScreen({ navigation }) {
   const { t } = useTranslation();
   const { theme } = useTheme();
+export default function HistoryScreen({ navigation }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+const [isHorizontal, setIsHorizontal] = useState(false);
+
+const toggleOrientation = async () => {
+  if (isHorizontal) {
+    await ScreenOrientation.lockAsync(
+      ScreenOrientation.OrientationLock.PORTRAIT_UP
+    );
+  } else {
+    await ScreenOrientation.lockAsync(
+      ScreenOrientation.OrientationLock.LANDSCAPE
+    );
+  }
+  setIsHorizontal(!isHorizontal);
+};
 
   const groupedEvents = groupEventsByLocation(ATTENDED_EVENTS);
 
@@ -120,10 +136,11 @@ export default function HistoryScreen({ navigation }) {
     setSelectedEvent(null);
   };
 
-  return (
+  
 
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} >
-      <StatusBar barStyle={theme.dark ? "light-content" : "dark-content"} backgroundColor={theme.colors.surface} />
+  return (
+    <SafeAreaView style={styles.container} >
+      <StatusBar barStyle="dark-content" backgroundColor= "#fff" />
 
       {/* Header */}
       {/* <View style={styles.header}>
@@ -148,8 +165,8 @@ export default function HistoryScreen({ navigation }) {
           <View key={location} style={styles.locationGroup}>
             {/* Location Header */}
             <View style={styles.locationHeader}>
-              <Text style={[styles.locationTitle, { color: theme.colors.text }]}>{location}</Text>
-              <Ionicons name="location-sharp" size={20} color={theme.colors.text} />
+              <Text style={styles.locationTitle}>{location}</Text>
+              <Ionicons name="location-sharp" size={20} color="#000" />
             </View>
 
             {/* Events in this location */}
@@ -168,8 +185,8 @@ export default function HistoryScreen({ navigation }) {
                     labelStyle={styles.avatarLabel}
                   />
                   <View style={styles.eventInfo}>
-                    <Text style={[styles.eventTitle, { color: theme.colors.text }]}>{event.title}</Text>
-                    <Text style={[styles.eventDate, { color: theme.colors.textSecondary }]}>
+                    <Text style={styles.eventTitle}>{event.title}</Text>
+                    <Text style={styles.eventDate}>
                       {event.date} {event.time}
                     </Text>
                   </View>
@@ -180,7 +197,7 @@ export default function HistoryScreen({ navigation }) {
                     textColor="#6B46C1"
                     compact
                   >
-                    {t('history.event_details')}
+                    Más info
                   </Button>
                 </View>
               </Card>
@@ -192,10 +209,10 @@ export default function HistoryScreen({ navigation }) {
           <View style={styles.emptyState}>
             <Ionicons name="calendar-outline" size={64} color="#ccc" />
             <Text style={styles.emptyStateText}>
-              {t('history.no_events')}
+              No has asistido a ningún evento aún
             </Text>
             <Text style={styles.emptyStateSubtext}>
-              {t('history.attended_events')}
+              Los eventos a los que asistas aparecerán aquí
             </Text>
           </View>
         )}
@@ -215,32 +232,39 @@ export default function HistoryScreen({ navigation }) {
         }}
       />
 
+        <TouchableOpacity onPress={toggleOrientation} style={styles.orientationBtn}>
+  {isHorizontal ? (
+    <RotateCcw size={26} color="#fff" />
+  ) : (
+    <RotateCw size={26} color="#fff" />
+  )}
+    </TouchableOpacity>
+
+
       {/* Bottom Navigation */}
       {/* Bottom Navigation */}
-      <View style={[styles.bottomNav, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
-        <TouchableOpacity
+      <View style={styles.bottomNav}>
+        <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('Perfil')}
         >
-          <Ionicons name="person-outline" size={24} color={theme.colors.textSecondary} />
-          <Text style={[styles.navText, { color: theme.colors.textSecondary }]}>{t('sidebar.profile')}</Text>
-
+          <Ionicons name="person-outline" size={24} color="#666" />
+          <Text style={styles.navText}>Perfil</Text>
         </TouchableOpacity>
-        <TouchableOpacity
+        <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('Home')}
         >
-          <Ionicons name="home" size={24} color={theme.colors.textSecondary} />
-          <Text style={[styles.navText, { color: theme.colors.textSecondary }]}>{t('sidebar.home')}</Text>
+          <Ionicons name="home" size={24} color="#666" />
+          <Text style={styles.navText}>Inicio</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <Ionicons name="calendar-outline" size={24} color={theme.colors.text} />
-          <Text style={[styles.navText, styles.navTextActive, { color: theme.colors.text }]}>{t('history.title')}</Text>
-          <View style={[styles.activeIndicator, { backgroundColor: theme.colors.primary }]} />
-
+          <Ionicons name="calendar-outline" size={24} color="#000" />
+          <Text style={[styles.navText, styles.navTextActive]}>Eventos</Text>
+          <View style={styles.activeIndicator} />
         </TouchableOpacity>
-      </View > {/* Event Detail Modal */}
-      < Portal >
+      </View>      {/* Event Detail Modal */}
+      <Portal>
         <Modal
           animationType="fade"
           transparent={true}
@@ -249,12 +273,12 @@ export default function HistoryScreen({ navigation }) {
         >
           <Pressable style={styles.modalOverlay} onPress={closeModal}>
             <Pressable
-              style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}
+              style={styles.modalContent}
               onPress={(e) => e.stopPropagation()}
             >
               {selectedEvent && (
                 <>
-                  <Surface style={[styles.modalHeader, { backgroundColor: theme.colors.surface }]} elevation={0}>
+                  <Surface style={styles.modalHeader} elevation={0}>
                     <Avatar.Text
                       size={48}
                       label={selectedEvent.title.charAt(0).toUpperCase()}
@@ -262,10 +286,10 @@ export default function HistoryScreen({ navigation }) {
                       labelStyle={styles.modalIcon}
                     />
                     <View style={styles.modalHeaderText}>
-                      <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+                      <Text style={styles.modalTitle}>
                         {selectedEvent.title}
                       </Text>
-                      <Text style={[styles.modalSubtitle, { color: theme.colors.textSecondary }]}>
+                      <Text style={styles.modalSubtitle}>
                         {selectedEvent.date} {selectedEvent.time}
                       </Text>
                     </View>
@@ -285,19 +309,19 @@ export default function HistoryScreen({ navigation }) {
                       textStyle={styles.attendedChipText}
                       style={styles.attendedChip}
                     >
-                      {t('history.attended_on')}
+                      Asistido
                     </Chip>
 
                     <View style={styles.modalInfoRow}>
-                      <Ionicons name="calendar" size={20} color={theme.colors.textSecondary} />
-                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
+                      <Ionicons name="calendar" size={20} color="#666" />
+                      <Text style={styles.modalInfoText}>
                         {selectedEvent.date}
                       </Text>
                     </View>
 
                     <View style={styles.modalInfoRow}>
-                      <Ionicons name="time" size={20} color={theme.colors.textSecondary} />
-                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
+                      <Ionicons name="time" size={20} color="#666" />
+                      <Text style={styles.modalInfoText}>
                         {selectedEvent.time}
                       </Text>
                     </View>
@@ -305,28 +329,23 @@ export default function HistoryScreen({ navigation }) {
                     <View style={styles.modalInfoRow}>
                       <Ionicons name="people" size={20} color="#666" />
                       <Text style={styles.modalInfoText}>
-                        {selectedEvent.participants} {t('history.participants')}
-                      </Text>
-                      <Ionicons name="people" size={20} color={theme.colors.textSecondary} />
-                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
-                        {selectedEvent.participants} {t('history.participants')}
-
+                        {selectedEvent.participants} participantes
                       </Text>
                     </View>
 
                     <View style={styles.modalInfoRow}>
-                      <Ionicons name="location" size={20} color={theme.colors.textSecondary} />
-                      <Text style={[styles.modalInfoText, { color: theme.colors.textSecondary }]}>
+                      <Ionicons name="location" size={20} color="#666" />
+                      <Text style={styles.modalInfoText}>
                         {selectedEvent.location}
                       </Text>
                     </View>
 
                     <Divider style={styles.modalDivider} />
 
-                    <Text style={[styles.modalDescriptionTitle, { color: theme.colors.text }]}>
-                      {t('history.description')}
+                    <Text style={styles.modalDescriptionTitle}>
+                      Descripción
                     </Text>
-                    <Text style={[styles.modalDescription, { color: theme.colors.textSecondary }]}>
+                    <Text style={styles.modalDescription}>
                       {selectedEvent.description}
                     </Text>
                   </ScrollView>
@@ -339,17 +358,16 @@ export default function HistoryScreen({ navigation }) {
                       onPress={closeModal}
                       style={styles.modalButton}
                     >
-                      {t('history.close')}
+                      Cerrar
                     </Button>
                   </View>
                 </>
-              )
-              }
+              )}
             </Pressable>
           </Pressable>
         </Modal>
       </Portal>
-    </SafeAreaView >
+    </SafeAreaView>
   );
 }
 
@@ -587,4 +605,19 @@ const styles = StyleSheet.create({
   modalButton: {
     borderRadius: 8,
   },
+  orientationBtn: {
+  position: "absolute",
+  bottom: 150,
+  right: 16,
+  backgroundColor: "#6B46C1",
+  padding: 14,
+  borderRadius: 40,
+  elevation: 5,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+  zIndex: 10,
+},
+
 });
