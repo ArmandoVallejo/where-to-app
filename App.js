@@ -19,6 +19,7 @@ import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import i18n from './i18n';
 
@@ -62,8 +63,9 @@ function CustomDrawerContent(props) {
     // { label: 'Escanear QR', icon: 'qr-code-outline', route: 'QRScanner' },
   ];
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // 👉 Aquí podrías limpiar el estado o token del usuario
+    await AsyncStorage.removeItem('userId');
     navigation.reset({
       index: 0,
       routes: [{ name: "Login" }],
