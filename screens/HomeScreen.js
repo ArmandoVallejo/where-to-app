@@ -28,189 +28,24 @@ import {
   FAB,
   TextInput,
   List,
-  Menu, // ← Mover Menu aquí
 } from "react-native-paper";
 import { DatePickerInput, TimePickerModal } from "react-native-paper-dates";
 
 import { db } from "../config/config";
 import { useTheme } from "../context/ThemeContext";
-import { ref, onValue } from "firebase/database";
+import { ref, onValue, get, set, update } from "firebase/database";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { BleManager } from "react-native-ble-plx";
 
 const manager = new BleManager();
 
-// Mock data for events with registration states
-const MOCK_EVENTS = [
-  {
-    id: 1,
-    title: "Feria de residencias",
-    location: "Auditorio",
-    date: "11/NOV/25", // Today
-    time: "09:00 AM",
-    participants: 20,
-    description:
-      "Estudiantes y egresados conectan con empresas para encontrar residencias profesionales y oportunidades laborales.",
-    imageUri:
-      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop",
-    category: "Deportes",
-    professor: "",
-    isAssignature: false,
-    isRegistered: true,
-    isToday: true,
-    sortDate: new Date("2025-11-11T09:00:00"),
-  },
-  {
-    id: 2,
-    title: "Campeonato Basket",
-    location: "Cancha",
-    date: "11/NOV/25", // Today
-    time: "10:00 AM",
-    participants: 15,
-    description:
-      "Torneo de baloncesto entre diferentes facultades. Participa y apoya a tu equipo.",
-    imageUri:
-      "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop",
-    category: "Deportes",
-    professor: "",
-    isAssignature: false,
-    isRegistered: false,
-    isToday: true,
-    sortDate: new Date("2025-11-11T10:00:00"),
-  },
-  {
-    id: 3,
-    title: "Plática servicio",
-    location: "Sala A",
-    date: "15/NOV/25",
-    time: "11:30 AM",
-    participants: 30,
-    description:
-      "Charla sobre servicio social y oportunidades de voluntariado en la comunidad.",
-    imageUri:
-      "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=300&fit=crop",
-    category: "Cultural",
-    professor: "",
-    isAssignature: false,
-    isRegistered: false,
-    isToday: false,
-    sortDate: new Date("2025-11-15T11:30:00"),
-  },
-  {
-    id: 4,
-    title: "Aplicaciones Moviles",
-    location: "Centro de computo",
-    date: "Lu - Vi",
-    time: "07:00 AM",
-    participants: 50,
-    description:
-      "Elabora aplicaciones móviles para múltiples plataformas empleando tecnologías emergentes para el desarrollo de aplicaciones que resuelvan problemáticas del entorno.",
-    imageUri:
-      "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop",
-    category: "Academico",
-    professor: "Profesor: Fernando Robles Casillas",
-    isAssignature: true,
-    isRegistered: true, // Always registered for assignatures
-    isToday: false,
-    sortDate: new Date("2025-11-11T07:00:00"),
-  },
-  {
-    id: 5,
-    title: "Desarrollo Web",
-    location: "Centro de computo",
-    date: "Lu - Vi",
-    time: "11:30 AM",
-    participants: 45,
-    description:
-      "Aprende a desarrollar aplicaciones web modernas utilizando las últimas tecnologías y frameworks.",
-    imageUri:
-      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=300&fit=crop",
-    category: "Academico",
-    professor: "Profesor: María González",
-    isAssignature: true,
-    isRegistered: true, // Always registered for assignatures
-    isToday: false,
-    sortDate: new Date("2025-11-11T11:30:00"),
-  },
-  {
-    id: 6,
-    title: "Concierto de Jazz",
-    location: "Auditorio Principal",
-    date: "12/NOV/25",
-    time: "07:00 PM",
-    participants: 80,
-    description:
-      "Noche de jazz con músicos locales e internacionales. Una experiencia musical única.",
-    imageUri:
-      "https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=400&h=300&fit=crop",
-    category: "Cultural",
-    professor: "",
-    isAssignature: false,
-    isRegistered: true,
-    isToday: false,
-    sortDate: new Date("2025-11-12T19:00:00"),
-  },
-  {
-    id: 7,
-    title: "Torneo de Futbol",
-    location: "Campo deportivo",
-    date: "13/NOV/25",
-    time: "03:00 PM",
-    participants: 40,
-    description:
-      "Torneo inter-facultades de futbol. Inscribe a tu equipo y compite por el trofeo.",
-    imageUri:
-      "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&h=300&fit=crop",
-    category: "Deportes",
-    professor: "",
-    isAssignature: false,
-    isRegistered: false,
-    isToday: false,
-    sortDate: new Date("2025-11-13T15:00:00"),
-  },
-  {
-    id: 8,
-    title: "Taller de Fotografía",
-    location: "Sala de Arte",
-    date: "14/NOV/25",
-    time: "10:00 AM",
-    participants: 25,
-    description:
-      "Aprende técnicas básicas y avanzadas de fotografía digital con profesionales del área.",
-    imageUri:
-      "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=400&h=300&fit=crop",
-    category: "Cultural",
-    professor: "",
-    isAssignature: false,
-    isRegistered: false,
-    isToday: false,
-    sortDate: new Date("2025-11-14T10:00:00"),
-  },
-  {
-    id: 9,
-    title: "Hackathon 2025",
-    location: "Laboratorio de Innovación",
-    date: "16/NOV/25",
-    time: "08:00 AM",
-    participants: 60,
-    description:
-      "Evento de programación de 24 horas. Forma tu equipo y crea soluciones innovadoras.",
-    imageUri:
-      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=300&fit=crop",
-    category: "Academico",
-    professor: "",
-    isAssignature: false,
-    isRegistered: true,
-    isToday: false,
-    sortDate: new Date("2025-11-16T08:00:00"),
-  },
-];
-
 const CATEGORIES = [
   "Todos",
   "Deportes",
   "Cultural",
-  "Academico",
+  "Tecnologia",
+  "Ingenieria",
   "Talleres",
   "Conferencias",
   "Sociales",
@@ -221,7 +56,13 @@ export default function HomeScreen({ navigation }) {
   const { theme } = useTheme();
   const [buildings, setBuildings] = useState([]);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [buildingSelectorVisible, setBuildingSelectorVisible] = useState(false);
+  
+  // Events state
+  const [events, setEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [userId, setUserId] = useState(null);
+  const [userRole, setUserRole] = useState(null);
 
   // BLE
   const [scanActive, setScanActive] = useState(true);
@@ -232,9 +73,7 @@ export default function HomeScreen({ navigation }) {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [registeredEvents, setRegisteredEvents] = useState(
-    MOCK_EVENTS.filter((e) => e.isRegistered).map((e) => e.id)
-  );
+  const [registeredEvents, setRegisteredEvents] = useState([]);
 
   // New event modal states
   const [newEventModalVisible, setNewEventModalVisible] = useState(false);
@@ -245,6 +84,137 @@ export default function HomeScreen({ navigation }) {
   const [time, setTime] = useState({ hours: 12, minutes: 0 });
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [description, setDescription] = useState("");
+
+  // Load user ID and fetch events
+  useEffect(() => {
+    const loadUserAndEvents = async () => {
+      try {
+        // Get current user ID
+        const storedUserId = await AsyncStorage.getItem("userId");
+        setUserId(storedUserId);
+
+        // Get user role
+        if (storedUserId) {
+          const userRef = ref(db, `users/${storedUserId}`);
+          const userSnapshot = await get(userRef);
+          if (userSnapshot.exists()) {
+            const userData = userSnapshot.val();
+            setUserRole(userData.role);
+          }
+        }
+
+        // Fetch events
+        const eventsRef = ref(db, "events");
+        const eventsSnapshot = await get(eventsRef);
+        
+        if (eventsSnapshot.exists()) {
+          const eventsData = eventsSnapshot.val();
+          
+          // Fetch buildings to get eventParticipants from each building
+          const buildingsRef = ref(db, "edificios");
+          const buildingsSnapshot = await get(buildingsRef);
+          const buildingsData = buildingsSnapshot.exists() ? buildingsSnapshot.val() : {};
+          
+          // Get user control number for checking registration
+          let userControl = null;
+          if (storedUserId) {
+            const userRef = ref(db, `users/${storedUserId}`);
+            const userSnapshot = await get(userRef);
+            if (userSnapshot.exists()) {
+              userControl = userSnapshot.val().control;
+            }
+          }
+          
+          // Transform events data
+          const eventsList = Object.keys(eventsData).map((eventId) => {
+            const event = eventsData[eventId];
+            
+            // Find the building that contains this event's eventParticipants
+            let participantsData = {};
+            let buildingId = null;
+            
+            for (const [bId, building] of Object.entries(buildingsData)) {
+              if (building.name === event.Lugar && building.eventParticipants && building.eventParticipants[eventId]) {
+                participantsData = building.eventParticipants[eventId];
+                buildingId = bId;
+                break;
+              }
+            }
+            
+            // Check if user is registered for this event
+            const isRegistered = userControl && 
+                                participantsData[userControl] &&
+                                participantsData[userControl].isRegistered;
+            
+            // Count participants
+            const participants = Object.keys(participantsData).length;
+            
+            // Parse date and time
+            const eventDate = new Date(event.Fecha);
+            const today = new Date();
+            const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+            const isToday = eventDateOnly.getTime() === todayDateOnly.getTime();
+            
+            // Format date for display (DD/MMM/YY)
+            const months = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+            const day = String(eventDate.getDate()).padStart(2, '0');
+            const month = months[eventDate.getMonth()];
+            const year = String(eventDate.getFullYear()).slice(-2);
+            const formattedDate = `${day}/${month}/${year}`;
+            
+            // Format time (HH:MM AM/PM)
+            let hours = eventDate.getHours();
+            const minutes = eventDate.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`;
+            
+            return {
+              id: eventId,
+              title: event.Nombre,
+              location: event.Lugar,
+              date: formattedDate,
+              time: formattedTime,
+              participants: participants,
+              description: event.Descripcion,
+              imageUri: event.imageUri || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop",
+              category: event.Categoria,
+              professor: "",
+              isAssignature: false,
+              isRegistered: isRegistered || false,
+              isToday: isToday,
+              sortDate: eventDate,
+              status: event.Status,
+              buildingId: buildingId,
+            };
+          });
+          
+          // Filter only active events
+          const activeEvents = eventsList.filter(event => event.status === "Activo");
+          
+          // Sort events by date
+          activeEvents.sort((a, b) => a.sortDate - b.sortDate);
+          
+          setEvents(activeEvents);
+          
+          // Set registered events
+          const registered = activeEvents
+            .filter(e => e.isRegistered)
+            .map(e => e.id);
+          setRegisteredEvents(registered);
+        }
+      } catch (error) {
+        console.error("❌ Error loading events:", error);
+        Alert.alert("Error", "No se pudieron cargar los eventos");
+      } finally {
+        setLoadingEvents(false);
+      }
+    };
+
+    loadUserAndEvents();
+  }, []);
 
   //
   //
@@ -439,15 +409,20 @@ export default function HomeScreen({ navigation }) {
 
   // Filter and sort events
   const getFilteredAndSortedEvents = () => {
-    let events = MOCK_EVENTS;
+    let filtered = events;
+
+    // Filter by selected building
+    if (selectedBuilding) {
+      filtered = filtered.filter((event) => event.location === selectedBuilding.name);
+    }
 
     // Filter by category
     if (selectedCategory !== "Todos") {
-      events = events.filter((event) => event.category === selectedCategory);
+      filtered = filtered.filter((event) => event.category === selectedCategory);
     }
 
     // Sort: Today's events first, then by date/time
-    return events.sort((a, b) => {
+    return filtered.sort((a, b) => {
       // Prioritize today's events
       if (a.isToday && !b.isToday) return -1;
       if (!a.isToday && b.isToday) return 1;
@@ -459,14 +434,101 @@ export default function HomeScreen({ navigation }) {
 
   const filteredEvents = getFilteredAndSortedEvents();
 
-  const toggleRegistration = (eventId) => {
-    setRegisteredEvents((prev) => {
-      if (prev.includes(eventId)) {
-        return prev.filter((id) => id !== eventId);
-      } else {
-        return [...prev, eventId];
+  const toggleRegistration = async (eventId) => {
+    try {
+      // Get current user data
+      if (!userId) {
+        Alert.alert("Error", "No se pudo identificar al usuario");
+        return;
       }
-    });
+
+      const userRef = ref(db, `users/${userId}`);
+      const userSnapshot = await get(userRef);
+      
+      if (!userSnapshot.exists()) {
+        Alert.alert("Error", "Usuario no encontrado");
+        return;
+      }
+
+      const userData = userSnapshot.val();
+      const userControl = userData.control;
+
+      // Find the event
+      const event = events.find(e => e.id === eventId);
+      if (!event) {
+        Alert.alert("Error", "Evento no encontrado");
+        return;
+      }
+
+      // Find the building ID for this event
+      if (!event.buildingId) {
+        Alert.alert("Error", "No se pudo identificar el edificio del evento");
+        return;
+      }
+
+      const isCurrentlyRegistered = registeredEvents.includes(eventId);
+
+      if (isCurrentlyRegistered) {
+        // Unregister from event
+        
+        // Remove from building's eventParticipants
+        const participantRef = ref(db, `edificios/${event.buildingId}/eventParticipants/${eventId}/${userControl}`);
+        await set(participantRef, null);
+
+        // Remove from user's historialEventos
+        const historialRef = ref(db, `users/${userId}/historialEventos/${event.location}/${eventId}`);
+        await set(historialRef, null);
+
+        // Update local state
+        setRegisteredEvents(prev => prev.filter(id => id !== eventId));
+        
+        // Update events list to reflect unregistration
+        setEvents(prevEvents => 
+          prevEvents.map(e => 
+            e.id === eventId 
+              ? { ...e, isRegistered: false, participants: Math.max(0, e.participants - 1) }
+              : e
+          )
+        );
+
+        Alert.alert("Éxito", "Te has desregistrado del evento");
+      } else {
+        // Register to event
+        const now = new Date().toISOString();
+
+        // Add to building's eventParticipants
+        const participantRef = ref(db, `edificios/${event.buildingId}/eventParticipants/${eventId}/${userControl}`);
+        await set(participantRef, {
+          isRegistered: true,
+          registeredAt: now,
+          isPresent: false
+        });
+
+        // Add to user's historialEventos
+        const historialRef = ref(db, `users/${userId}/historialEventos/${event.location}/${eventId}`);
+        await set(historialRef, {
+          nombre: event.title,
+          fecha: event.sortDate.toISOString().split('T')[0] // Format: YYYY-MM-DD
+        });
+
+        // Update local state
+        setRegisteredEvents(prev => [...prev, eventId]);
+        
+        // Update events list to reflect registration
+        setEvents(prevEvents => 
+          prevEvents.map(e => 
+            e.id === eventId 
+              ? { ...e, isRegistered: true, participants: e.participants + 1 }
+              : e
+          )
+        );
+
+        Alert.alert("Éxito", `Te has registrado exitosamente a "${event.title}"`);
+      }
+    } catch (error) {
+      console.error("❌ Error toggling registration:", error);
+      Alert.alert("Error", "No se pudo completar la operación. Intenta de nuevo.");
+    }
   };
 
   const isEventRegistered = (eventId) => {
@@ -527,6 +589,76 @@ export default function HomeScreen({ navigation }) {
             </Button>
           </Dialog.Actions>
         </Dialog>
+
+        {/* Modal selector de edificios */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={buildingSelectorVisible}
+          onRequestClose={() => setBuildingSelectorVisible(false)}
+        >
+          <Pressable 
+            style={styles.modalOverlay} 
+            onPress={() => setBuildingSelectorVisible(false)}
+          >
+            <Pressable
+              style={[
+                styles.buildingSelectorModal,
+                { backgroundColor: theme.colors.surface },
+              ]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.buildingSelectorHeader}>
+                <Text style={[styles.buildingSelectorTitle, { color: theme.colors.text }]}>
+                  Seleccionar Edificio
+                </Text>
+                <IconButton
+                  icon="close"
+                  size={24}
+                  onPress={() => setBuildingSelectorVisible(false)}
+                />
+              </View>
+              
+              <Divider />
+              
+              <ScrollView style={styles.buildingsList}>
+                {buildings.map((building) => (
+                  <TouchableOpacity
+                    key={building.id}
+                    style={[
+                      styles.buildingItem,
+                      selectedBuilding?.id === building.id && styles.buildingItemSelected,
+                      { borderBottomColor: theme.colors.border }
+                    ]}
+                    onPress={() => {
+                      setSelectedBuilding(building);
+                      setBuildingSelectorVisible(false);
+                    }}
+                  >
+                    <View style={styles.buildingItemContent}>
+                      <Ionicons 
+                        name="business" 
+                        size={24} 
+                        color={selectedBuilding?.id === building.id ? "#6B46C1" : "#666"} 
+                      />
+                      <Text 
+                        style={[
+                          styles.buildingItemText,
+                          { color: selectedBuilding?.id === building.id ? "#6B46C1" : theme.colors.text }
+                        ]}
+                      >
+                        {building.name}
+                      </Text>
+                    </View>
+                    {selectedBuilding?.id === building.id && (
+                      <Ionicons name="checkmark-circle" size={24} color="#6B46C1" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </Portal>
       {/*  */}
 
@@ -548,45 +680,30 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Botón Admin */}
-        <TouchableOpacity
-          onPress={() => setAdmin(!admin)}
-          style={{ marginLeft: 15 }}
-        >
-          <Text
-            style={[styles.adminButtonText, { color: theme.colors.onPrimary }]}
+        {/* Botón Admin - Solo visible para usuarios con rol "admin" */}
+        {/* {userRole === "admin" && (
+          <TouchableOpacity
+            onPress={() => setAdmin(!admin)}
+            style={{ marginLeft: 15 }}
           >
-            {admin ? "Salir Admin" : "Entrar Admin"}
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[styles.adminButtonText, { color: theme.colors.onPrimary }]}
+            >
+              {admin ? "Salir Admin" : "Entrar Admin"}
+            </Text>
+          </TouchableOpacity>
+        )} */}
 
         {/* Selector de edificio */}
-        <Menu
-          visible={menuVisible}
-          onDismiss={() => setMenuVisible(false)}
-          anchor={
-            <TouchableOpacity
-              onPress={() => setMenuVisible(true)}
-              style={styles.locationButton}
-            >
-              <Text style={styles.locationText}>
-                {selectedBuilding ? selectedBuilding.name : "Seleccionar"}
-              </Text>
-              <Ionicons name="location-sharp" size={20} color="#000" />
-            </TouchableOpacity>
-          }
+        <TouchableOpacity
+          onPress={() => setBuildingSelectorVisible(true)}
+          style={styles.locationButton}
         >
-          {buildings.map((b) => (
-            <Menu.Item
-              key={b.id}
-              onPress={() => {
-                setSelectedBuilding(b);
-                setMenuVisible(false);
-              }}
-              title={b.name}
-            />
-          ))}
-        </Menu>
+          <Text style={[styles.locationText, { color: theme.colors.onPrimary }]}>
+            {selectedBuilding ? selectedBuilding.name : "Seleccionar"}
+          </Text>
+          <Ionicons name="location-sharp" size={20} color={theme.colors.onPrimary} />
+        </TouchableOpacity>
       </View>
 
       {/* Category Chips */}
@@ -629,13 +746,15 @@ export default function HomeScreen({ navigation }) {
           </Chip>
         ))}
       </ScrollView>
-
-      <FAB
+        {userRole === "admin" && (
+          <FAB
         style={styles.fab}
         icon="plus"
         size="medium"
         onPress={onAddEventHandler}
       />
+        )}
+      
 
       {/* Events List */}
       <ScrollView
@@ -643,7 +762,45 @@ export default function HomeScreen({ navigation }) {
         contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
       >
-        {filteredEvents.map((event, index) => (
+        {loadingEvents ? (
+          // Skeleton Loading
+          <>
+            {[1, 2, 3].map((index) => (
+              <Card
+                key={`skeleton-${index}`}
+                style={styles.eventCard}
+                mode="elevated"
+              >
+                <View style={styles.eventHeader}>
+                  <Surface style={styles.skeletonAvatar} />
+                  <View style={styles.eventHeaderText}>
+                    <Surface style={styles.skeletonTitle} />
+                    <Surface style={styles.skeletonDate} />
+                  </View>
+                </View>
+
+                <Surface style={styles.skeletonImage} />
+
+                <Card.Content style={styles.cardContent}>
+                  <View style={styles.eventFooter}>
+                    <View style={styles.eventInfo}>
+                      <Surface style={styles.skeletonTitleBold} />
+                      <Surface style={styles.skeletonLocation} />
+                    </View>
+                  </View>
+                  <Surface style={styles.skeletonDescription} />
+                  <Surface style={[styles.skeletonDescription, { width: '70%' }]} />
+                </Card.Content>
+              </Card>
+            ))}
+          </>
+        ) : filteredEvents.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="calendar-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyText}>No hay eventos disponibles</Text>
+          </View>
+        ) : (
+          filteredEvents.map((event, index) => (
           <Card
             key={event.id}
             style={styles.eventCard}
@@ -804,17 +961,19 @@ export default function HomeScreen({ navigation }) {
               )}
             </Card.Actions>
           </Card>
-        ))}
+        ))
+        )}
       </ScrollView>
 
       {/* FAB */}
-      <FAB
-        icon="plus"
-        style={styles.fab}
-        size="medium"
-        visible={admin}
-        onPress={onAddEventHandler}
-      />
+      {admin && (
+        <FAB
+          icon="plus"
+          style={styles.fab}
+          size="medium"
+          onPress={onAddEventHandler}
+        />
+      )}
 
       {/* Bottom Navigation */}
       <View
@@ -1667,5 +1826,110 @@ const styles = StyleSheet.create({
   adminButtonText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  // Skeleton loading styles
+  skeletonAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#e0e0e0",
+  },
+  skeletonTitle: {
+    width: 120,
+    height: 16,
+    borderRadius: 4,
+    backgroundColor: "#e0e0e0",
+    marginBottom: 8,
+  },
+  skeletonDate: {
+    width: 80,
+    height: 14,
+    borderRadius: 4,
+    backgroundColor: "#e0e0e0",
+  },
+  skeletonImage: {
+    width: "100%",
+    height: 200,
+    backgroundColor: "#e0e0e0",
+    marginVertical: 8,
+  },
+  skeletonTitleBold: {
+    width: 150,
+    height: 18,
+    borderRadius: 4,
+    backgroundColor: "#e0e0e0",
+    marginBottom: 8,
+  },
+  skeletonLocation: {
+    width: 100,
+    height: 14,
+    borderRadius: 4,
+    backgroundColor: "#e0e0e0",
+  },
+  skeletonDescription: {
+    width: "100%",
+    height: 14,
+    borderRadius: 4,
+    backgroundColor: "#e0e0e0",
+    marginTop: 8,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#999",
+  },
+  // Building Selector Modal styles
+  buildingSelectorModal: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    width: "100%",
+    maxHeight: "70%",
+    position: "absolute",
+    bottom: 0,
+  },
+  buildingSelectorHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingLeft: 20,
+    paddingRight: 8,
+    paddingVertical: 12,
+  },
+  buildingSelectorTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  buildingsList: {
+    maxHeight: 400,
+  },
+  buildingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  buildingItemSelected: {
+    backgroundColor: "#F5F3FF",
+  },
+  buildingItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  buildingItemText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#000",
   },
 });
